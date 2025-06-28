@@ -6,7 +6,7 @@ import { HttpServer } from './HttpServer.js';
 
 yargs(hideBin(process.argv))
   .command(
-    'serve <port> <wsport> <peers..>',
+    'serve <port> <wsport> [peers..]',
     'start the server',
     (yargs) => {
       return yargs
@@ -30,8 +30,6 @@ yargs(hideBin(process.argv))
       const port = argv.port ?? 3000;
       const wsport = argv.wsport ?? port + 2000;
       const peers = argv.peers;
-
-      console.log({ peers });
 
       const blockChain = new BlockChain();
 
