@@ -38,6 +38,8 @@ export class P2pServer {
 
     server.on('connection', (socket) => {
       this.connectSocket(socket);
+
+      log.info(`Peer connected.`);
     });
 
     this.connectToPeers();
@@ -51,6 +53,8 @@ export class P2pServer {
 
       socket.on('open', () => {
         this.connectSocket(socket);
+
+        log.info(`Connected to peer ${peer}`);
       });
     }
   }
