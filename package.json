@@ -1,12 +1,35 @@
 {
-  "name": "node-typescript-boilerplate",
+  "name": "blockchain",
   "version": "0.0.0",
-  "description": "Minimalistic boilerplate to quick-start Node.js development in TypeScript.",
   "type": "module",
   "engines": {
     "node": ">= 22.11 < 23"
   },
-  "devDependencies": {
+  "scripts": {
+    "dev": "tsx src/app/index.ts",
+    "start": "node build/src/app/index.js",
+    "clean": "rimraf coverage build tmp",
+    "prebuild": "npm run lint",
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -w -p tsconfig.json",
+    "build:release": "npm run clean && tsc -p tsconfig.release.json",
+    "lint": "eslint .",
+    "test": "vitest run unit --config __tests__/vitest.config.ts",
+    "test:coverage": "vitest run unit --config __tests__/vitest.config.ts --coverage.enabled --coverage.all",
+    "prettier": "prettier \"{src,__{tests}__}/**/*.{ts,mts}\" --config .prettierrc --write",
+    "prettier:check": "prettier \"{src,__{tests}__}/**/*.{ts,mts}\" --config .prettierrc --check",
+    "test:watch": "vitest unit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "@hono/zod-validator": "^0.7.0",
+    "hono": "^4.8.3",
+    "lodash-es": "^4.17.21",
+    "prettyjson": "^1.2.5",
+    "tslib": "~2.8",
+    "zod": "^3.25.67"
+  },
+    "devDependencies": {
     "@eslint/js": "~9.17",
     "@types/eslint__js": "~8.42",
     "@types/lodash-es": "^4.17.12",
@@ -25,34 +48,5 @@
     "typescript": "~5.7",
     "typescript-eslint": "~8.19",
     "vitest": "~2.1"
-  },
-  "scripts": {
-    "dev": "tsx src/app/index.ts",
-    "start": "node build/src/main.js",
-    "clean": "rimraf coverage build tmp",
-    "prebuild": "npm run lint",
-    "build": "tsc -p tsconfig.json",
-    "build:watch": "tsc -w -p tsconfig.json",
-    "build:release": "npm run clean && tsc -p tsconfig.release.json",
-    "lint": "eslint .",
-    "test": "vitest run unit --config __tests__/vitest.config.ts",
-    "test:coverage": "vitest run unit --config __tests__/vitest.config.ts --coverage.enabled --coverage.all",
-    "prettier": "prettier \"{src,__{tests}__}/**/*.{ts,mts}\" --config .prettierrc --write",
-    "prettier:check": "prettier \"{src,__{tests}__}/**/*.{ts,mts}\" --config .prettierrc --check",
-    "test:watch": "vitest unit"
-  },
-  "author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
-  "license": "Apache-2.0",
-  "dependencies": {
-    "@hono/node-server": "^1.14.4",
-    "@hono/zod-validator": "^0.7.0",
-    "hono": "^4.8.3",
-    "lodash-es": "^4.17.21",
-    "prettyjson": "^1.2.5",
-    "tslib": "~2.8",
-    "zod": "^3.25.67"
-  },
-  "volta": {
-    "node": "22.12.0"
   }
 }
