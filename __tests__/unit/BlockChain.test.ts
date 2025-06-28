@@ -1,6 +1,9 @@
 import { describe, test, expect, beforeEach } from 'vitest';
-import { Block } from '../../src/Block.js';
-import { BlockChain, ReplaceChainResult } from '../../src/BlockChain.js';
+import { Block } from '../../src/blockchain/Block.js';
+import {
+  BlockChain,
+  ReplaceChainResult,
+} from '../../src/blockchain/BlockChain.js';
 
 describe('Blockchain', () => {
   let blockChain: BlockChain, blockChain2: BlockChain;

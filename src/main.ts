@@ -1,4 +1,4 @@
-import { Block } from './Block.js';
+import { Block } from './blockchain/Block.js';
 
 const genesisBlock = Block.genesis();
 

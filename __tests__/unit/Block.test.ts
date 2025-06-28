@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from 'vitest';
-import { Block } from '../../src/Block.js';
+import { Block } from '../../src/blockchain/Block.js';
 
 describe('Block', () => {
   let data: object, lastBlock: Block, block: Block;

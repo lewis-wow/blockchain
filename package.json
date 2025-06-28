@@ -27,7 +27,7 @@
     "vitest": "~2.1"
   },
   "scripts": {
-    "dev": "tsx src/main.ts",
+    "dev": "tsx src/app/index.ts",
     "start": "node build/src/main.js",
     "clean": "rimraf coverage build tmp",
     "prebuild": "npm run lint",
@@ -44,6 +44,8 @@
   "author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "hono": "^4.8.3",
     "lodash-es": "^4.17.21",
     "prettyjson": "^1.2.5",
     "tslib": "~2.8"
