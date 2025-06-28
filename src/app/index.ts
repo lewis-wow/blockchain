@@ -33,17 +33,19 @@ yargs(hideBin(process.argv))
 
       const blockChain = new BlockChain();
 
-      const httpServer = new HttpServer({
-        blockChain,
-      });
-
-      httpServer.listen({ port });
-
       const p2pServer = new P2pServer({
         blockChain,
         peers,
       });
+
       p2pServer.listen({ port: wsport });
+
+      const httpServer = new HttpServer({
+        blockChain,
+        p2pServer,
+      });
+
+      httpServer.listen({ port });
     },
   )
   .help()

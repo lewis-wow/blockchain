@@ -61,5 +61,25 @@ export class P2pServer {
 
   private connectSocket(socket: WebSocket): void {
     this.sockets.push(socket);
+
+    this.messageHandler(socket);
+
+    socket.send(JSON.stringify(this.blockChain.toJSON()));
+  }
+
+  private messageHandler(socket: WebSocket): void {
+    socket.on('message', (message) => {
+      const anotherPeerBlockChain = JSON.parse(message.toString());
+
+      log.debug('Another peer blockchain', anotherPeerBlockChain);
+
+      this.blockChain.replaceChain(anotherPeerBlockChain);
+    });
+  }
+
+  public syncChains(): void {
+    for (const socket of this.sockets) {
+      socket.send(JSON.stringify(this.blockChain.toJSON()));
+    }
   }
 }

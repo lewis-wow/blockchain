@@ -1,5 +1,9 @@
 import { first, isEqual, last } from 'lodash-es';
 import { Block } from './Block.js';
+import { log as defaultLog } from '../utils/logger.js';
+
+const SERVICE_NAME = 'blockchain';
+const log = defaultLog.child({ serviceName: SERVICE_NAME });
 
 export enum ReplaceChainResult {
   NEW_CHAIN_REPLACE = 'NEW_CHAIN_REPLACE',
@@ -90,7 +94,12 @@ export class BlockChain {
       return ReplaceChainResult.NEW_CHAIN_INVALID;
     }
 
+    log.debug('Replacing blockchain with new one', newChain);
     this.chain = newChain;
     return ReplaceChainResult.NEW_CHAIN_REPLACE;
+  }
+
+  toJSON(): object[] {
+    return this.getChain().map((block) => block.toJSON());
   }
 }

@@ -5,6 +5,7 @@ import { BlockChain } from '../blockchain/BlockChain.js';
 import z from 'zod';
 import { serve } from '@hono/node-server';
 import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
+import { P2pServer } from './P2pServer.js';
 
 const SERVICE_NAME = 'http-server';
 
@@ -12,6 +13,7 @@ const log = defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type HttpServerOptions = {
   blockChain: BlockChain;
+  p2pServer: P2pServer;
 };
 
 export type ListenArgs = {
@@ -24,19 +26,25 @@ export class HttpServer {
 
   constructor(opts: HttpServerOptions) {
     this.blockChain = opts.blockChain;
+    const p2pServer = opts.p2pServer;
     this.app = new Hono();
 
     this.app.get('/blocks', (c) => {
       return c.json(this.blockChain.getChain());
     });
 
-    this.app.post('/mine', zValidator('json', z.record(z.unknown())), (c) => {
-      const data = c.req.valid('json');
+    this.app.post(
+      '/mine',
+      zValidator('json', z.record(z.string(), z.unknown())),
+      (c) => {
+        const data = c.req.valid('json');
 
-      const newBlock = this.blockChain.addBlock(data);
+        const newBlock = this.blockChain.addBlock(data);
+        p2pServer.syncChains();
 
-      return c.json(newBlock.toJSON());
-    });
+        return c.json(newBlock.toJSON());
+      },
+    );
   }
 
   listen({ port }: ListenArgs): void {

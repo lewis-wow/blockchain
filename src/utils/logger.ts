@@ -11,10 +11,7 @@ const logFormat = printf(
 );
 
 export const log = createLogger({
-  format: combine(
-    colorize(), // Add colors
-    timestamp(), // Add timestamp
-    logFormat, // Use custom format
-  ),
+  level: 'debug',
+  format: combine(colorize(), timestamp(), logFormat),
   transports: [new transports.Console()],
 });
