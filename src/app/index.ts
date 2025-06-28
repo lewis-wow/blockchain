@@ -1,33 +1,50 @@
-import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
 import { BlockChain } from '../blockchain/BlockChain.js';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import { P2pServer } from './P2pServer.js';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { HttpServer } from './HttpServer.js';
 
-const blockChain = new BlockChain();
+yargs(hideBin(process.argv))
+  .command(
+    'serve [port] [wsport] [...peers]',
+    'start the server',
+    (yargs) => {
+      return yargs
+        .positional('port', {
+          describe: 'port to bind on http server',
+          type: 'number',
+          default: 3000,
+        })
+        .positional('wsport', {
+          describe: 'port to bind on peer-to-peer server',
+          type: 'number',
+        })
+        .positional('peers', {
+          describe: 'list of peers addresses',
+          type: 'string',
+          array: true,
+          default: [],
+        });
+    },
+    async (argv) => {
+      const port = argv.port;
+      const wsport = argv.wsport ?? port + 2000;
+      const peers = argv.peers;
 
-const hono = new Hono();
+      const blockChain = new BlockChain();
 
-hono.get('/blocks', (c) => {
-  return c.json(blockChain.getChain());
-});
+      const httpServer = new HttpServer({
+        blockChain,
+      });
 
-hono.post('/mine', zValidator('json', z.record(z.unknown())), (c) => {
-  const data = c.req.valid('json');
+      httpServer.listen({ port });
 
-  const newBlock = blockChain.addBlock(data);
-
-  return c.json(newBlock.toJSON());
-});
-
-const port = 3000;
-
-serve(
-  {
-    fetch: hono.fetch,
-    port,
-  },
-  () => {
-    console.log(`Server running on http://localhost:${port}`);
-  },
-);
+      const p2pServer = new P2pServer({
+        blockChain,
+        peers,
+      });
+      p2pServer.listen({ port: wsport });
+    },
+  )
+  .help()
+  .parse();
