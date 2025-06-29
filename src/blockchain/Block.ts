@@ -16,6 +16,7 @@ export type BlockOptions = {
   lastHash: string;
   hash: string;
   data: Serializable;
+  nonce: number;
 };
 
 /**
@@ -29,6 +30,7 @@ export type HashArgs = {
   timestamp: Date;
   lastHash: string;
   data: Serializable;
+  nonce: number;
 };
 
 export type SerializedBlock = Merge<
@@ -46,6 +48,7 @@ export class Block {
   lastHash: string;
   hash: string;
   data: Serializable;
+  nonce: number;
 
   /**
    * Creates an instance of Block.
@@ -56,6 +59,7 @@ export class Block {
     this.lastHash = opts.lastHash;
     this.hash = opts.hash;
     this.data = opts.data;
+    this.nonce = opts.nonce;
   }
 
   /**
@@ -68,6 +72,7 @@ export class Block {
       lastHash: this.lastHash,
       hash: this.hash,
       data: this.data,
+      nonce: this.nonce,
     };
   }
 
@@ -77,6 +82,7 @@ export class Block {
       lastHash: json.lastHash,
       hash: json.hash,
       data: json.data,
+      nonce: json.nonce,
     });
   }
 
@@ -104,6 +110,7 @@ export class Block {
       lastHash: sha256('genesis-last-hash'),
       hash: sha256('genesis-hash'),
       data: {},
+      nonce: 0,
     });
   }
 
@@ -123,25 +130,46 @@ export class Block {
    * @returns {Block} The newly mined block.
    */
   static mineBlock(lastBlock: Block, data: Serializable): Block {
-    const timestamp = new Date();
     const lastHash = lastBlock.hash;
-    const hash = Block.hash({
+
+    let timestamp = new Date();
+    let nonce = 0;
+
+    let hash = Block.hash({
       timestamp,
       lastHash,
       data,
+      nonce,
     });
+
+    while (
+      hash.substring(0, Block.DIFFICULTY) !== '0'.repeat(Block.DIFFICULTY)
+    ) {
+      timestamp = new Date();
+      nonce++;
+
+      hash = Block.hash({
+        timestamp,
+        lastHash,
+        data,
+        nonce,
+      });
+    }
 
     return new Block({
       timestamp,
       lastHash,
       hash,
       data,
+      nonce,
     });
   }
 
   static blockHash(block: Block): string {
-    const { timestamp, lastHash, data } = block;
+    const { timestamp, lastHash, data, nonce } = block;
 
-    return Block.hash({ timestamp, lastHash, data });
+    return Block.hash({ timestamp, lastHash, data, nonce });
   }
+
+  static readonly DIFFICULTY = 6;
 }
