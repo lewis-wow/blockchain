@@ -35,7 +35,7 @@ export class HttpServer {
 
     this.app.post(
       '/mine',
-      zValidator('json', z.record(z.string(), z.unknown())),
+      zValidator('json', z.record(z.string(), z.any())),
       (c) => {
         const data = c.req.valid('json');
 

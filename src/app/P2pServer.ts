@@ -69,11 +69,13 @@ export class P2pServer {
 
   private messageHandler(socket: WebSocket): void {
     socket.on('message', (message) => {
-      const anotherPeerBlockChain = JSON.parse(message.toString());
+      const anotherPeerBlockChain = BlockChain.fromJSON(
+        JSON.parse(message.toString()),
+      );
 
       log.debug('Another peer blockchain', anotherPeerBlockChain);
 
-      this.blockChain.replaceChain(anotherPeerBlockChain);
+      this.blockChain.replaceChain(anotherPeerBlockChain.getChain());
     });
   }
 

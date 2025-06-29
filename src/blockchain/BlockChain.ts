@@ -1,6 +1,7 @@
 import { first, isEqual, last } from 'lodash-es';
-import { Block } from './Block.js';
+import { Block, SerializedBlock } from './Block.js';
 import { log as defaultLog } from '../utils/logger.js';
+import { Serializable } from '../types.js';
 
 const SERVICE_NAME = 'blockchain';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -20,14 +21,14 @@ export class BlockChain {
    * @private
    * @type {Block[]}
    */
-  private chain: Block[] = [Block.genesis()];
+  constructor(private chain: Block[] = [Block.genesis()]) {}
 
   /**
    * Adds a new block to the chain with the given data.
-   * @param {object} data - The data to be included in the new block.
+   * @param {Serializable} data - The data to be included in the new block.
    * @returns {Block} The newly added block.
    */
-  addBlock(data: object): Block {
+  addBlock(data: Serializable): Block {
     const lastBlock = last(this.chain);
     const block = Block.mineBlock(lastBlock, data);
     this.chain.push(block);
@@ -99,7 +100,13 @@ export class BlockChain {
     return ReplaceChainResult.NEW_CHAIN_REPLACE;
   }
 
-  toJSON(): object[] {
+  toJSON(): SerializedBlock[] {
     return this.getChain().map((block) => block.toJSON());
+  }
+
+  static fromJSON(json: SerializedBlock[]): BlockChain {
+    return new BlockChain(
+      json.map((serializedBlock) => Block.fromJSON(serializedBlock)),
+    );
   }
 }
