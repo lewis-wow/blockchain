@@ -17,14 +17,16 @@ describe('Wallet', () => {
   describe('createTransaction()', () => {
     let amount: number,
       transaction: Transaction,
-      transactionPool: TransactionPool;
+      transactionPool: TransactionPool,
+      recipientAddress: string;
 
     beforeEach(() => {
       amount = 100;
+      recipientAddress = 'recipientAddress';
       transactionPool = new TransactionPool();
       transaction = wallet.createTransaction({
         amount,
-        recipientAddress: 'recipientAddress',
+        recipientAddress,
         transactionPool,
       });
     });
@@ -42,17 +44,24 @@ describe('Wallet', () => {
     test('update a transaction by calling `createTransaction` twice', () => {
       wallet.createTransaction({
         amount,
-        recipientAddress: 'recipientAddress',
+        recipientAddress,
         transactionPool,
       });
 
       // @ts-expect-error - private property
       expect(transactionPool.transactions.length).toBe(1);
+
       expect(
         transaction.outputs.find(
           (output) => output.address === wallet.publicKey,
         )!.amount,
       ).toEqual(wallet.balance - 2 * amount);
+
+      expect(
+        transaction.outputs
+          .filter((output) => output.address === recipientAddress)
+          .map((transactionOutput) => transactionOutput.amount),
+      ).toEqual([amount, amount]);
     });
 
     test('amount is more than balance', () => {
