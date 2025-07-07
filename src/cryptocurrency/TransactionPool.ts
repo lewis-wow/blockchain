@@ -49,4 +49,8 @@ export class TransactionPool {
       (transaction) => transaction.input!.address === senderAddress,
     );
   }
+
+  clear(): void {
+    this.transactions = [];
+  }
 }

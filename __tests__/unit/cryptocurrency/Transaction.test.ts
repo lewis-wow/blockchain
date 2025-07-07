@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { Transaction } from '../../../src/cryptocurrency/Transaction.js';
 import { Wallet } from '../../../src/cryptocurrency/Wallet.js';
+import { Miner } from '../../../src/app/Miner.js';
 
 describe('Transaction', () => {
   let senderWallet: Wallet, recipientWallet: Wallet;
@@ -123,6 +124,26 @@ describe('Transaction', () => {
           amount: senderWallet.balance + 1,
         }),
       ).toThrowError();
+    });
+  });
+
+  describe('createRewardTransaction()', () => {
+    let transaction: Transaction, minerWallet: Wallet;
+
+    beforeEach(() => {
+      minerWallet = new Wallet();
+      transaction = Transaction.createRewardTransaction(
+        minerWallet,
+        Wallet.createBlockchainWallet(),
+      );
+    });
+
+    test('transaction gives miner a reward', () => {
+      expect(
+        transaction.outputs.find(
+          (output) => output.address === minerWallet.publicKey,
+        )?.amount,
+      ).toBe(Miner.MINING_REWARD);
     });
   });
 });

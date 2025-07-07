@@ -73,4 +73,9 @@ export class Wallet {
   }
 
   static readonly INITIAL_BALANCE = 500;
+
+  static createBlockchainWallet(): Wallet {
+    const wallet = new Wallet();
+    return wallet;
+  }
 }

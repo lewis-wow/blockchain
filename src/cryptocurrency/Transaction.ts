@@ -4,6 +4,8 @@ import { sha256 } from '../utils/sha256.js';
 import { KeyPair } from './KeyPair.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Serializable } from '../utils/Serializable.js';
+import { Miner } from '../app/Miner.js';
+import { JSONObject } from '../types.js';
 
 export type TransactionInput = {
   timestamp: Date;
@@ -58,7 +60,7 @@ export class Transaction extends Serializable {
     return this;
   }
 
-  override toJSON(): Record<string, unknown> {
+  override toJSON(): JSONObject {
     return {
       id: this.id,
       input: this.input,
@@ -66,12 +68,22 @@ export class Transaction extends Serializable {
     };
   }
 
-  static override fromJSON(json: Record<string, unknown>): Transaction {
+  static override fromJSON(json: JSONObject): Transaction {
     const transaction = new Transaction();
     transaction.id = json.id as string;
     transaction.input = json.input as TransactionInput;
     transaction.outputs = json.outputs as TransactionOutput[];
 
+    return transaction;
+  }
+
+  static _transactionWithOutputs(
+    senderWallet: Wallet,
+    outputs: TransactionOutput[],
+  ) {
+    const transaction = new Transaction();
+    transaction.outputs.push(...outputs);
+    Transaction.signTransaction(transaction, senderWallet);
     return transaction;
   }
 
@@ -84,9 +96,7 @@ export class Transaction extends Serializable {
       throw new AmountExceedsBalance(amount);
     }
 
-    const transaction = new Transaction();
-
-    transaction.outputs = [
+    return Transaction._transactionWithOutputs(senderWallet, [
       {
         amount: senderWallet.balance - amount,
         address: senderWallet.publicKey,
@@ -95,23 +105,28 @@ export class Transaction extends Serializable {
         amount,
         address: recipientAddress,
       },
-    ];
+    ]);
+  }
 
+  static createRewardTransaction(
+    minerWallet: Wallet,
+    blockChainWallet: Wallet,
+  ): Transaction {
+    return Transaction._transactionWithOutputs(blockChainWallet, [
+      {
+        amount: Miner.MINING_REWARD,
+        address: minerWallet.publicKey,
+      },
+    ]);
+  }
+
+  static signTransaction(transaction: Transaction, senderWallet: Wallet): void {
     transaction.input = {
       timestamp: new Date(),
       amount: senderWallet.balance,
       address: senderWallet.publicKey,
+      signature: senderWallet.sign(sha256(JSON.stringify(transaction.outputs))),
     };
-
-    Transaction.signTransaction(transaction, senderWallet);
-
-    return transaction;
-  }
-
-  static signTransaction(transaction: Transaction, senderWallet: Wallet): void {
-    transaction.input!.signature = senderWallet.sign(
-      sha256(JSON.stringify(transaction.outputs)),
-    );
   }
 
   static verifyTransaction(transaction: Transaction): boolean {

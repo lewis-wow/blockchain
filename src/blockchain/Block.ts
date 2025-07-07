@@ -1,6 +1,6 @@
 import { renderString } from 'prettyjson';
 import { sha256 } from '../utils/sha256.js';
-import { JSONData } from '../types.js';
+import { JSONData, JSONObject } from '../types.js';
 import { Serializable } from '../utils/Serializable.js';
 
 /**
@@ -65,7 +65,7 @@ export class Block extends Serializable {
    * Converts the block to a JSON-friendly object.
    * @returns {object} JSON representation of the block.
    */
-  toJSON(): Record<string, unknown> {
+  toJSON(): JSONObject {
     return {
       timestamp: this.timestamp.toISOString(),
       lastHash: this.lastHash,
@@ -76,7 +76,7 @@ export class Block extends Serializable {
     };
   }
 
-  static fromJSON(json: Record<string, unknown>): Block {
+  static fromJSON(json: JSONObject): Block {
     return new Block({
       timestamp: new Date(json.timestamp as string),
       lastHash: json.lastHash as string,

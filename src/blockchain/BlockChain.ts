@@ -2,7 +2,7 @@ import { first, isEqual, last } from 'lodash-es';
 import { Block } from './Block.js';
 import { log as defaultLog } from '../utils/logger.js';
 import { Serializable } from '../utils/Serializable.js';
-import { JSONData } from '../types.js';
+import { JSONArray, JSONData, JSONObject } from '../types.js';
 
 const SERVICE_NAME = 'blockchain';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -103,13 +103,15 @@ export class BlockChain extends Serializable {
     return ReplaceChainResult.NEW_CHAIN_REPLACE;
   }
 
-  toJSON(): Record<string, unknown>[] {
+  toJSON(): JSONArray {
     return this.getChain().map((block) => block.toJSON());
   }
 
-  static fromJSON(json: Record<string, unknown>[]): BlockChain {
+  static fromJSON(json: JSONArray): BlockChain {
     return new BlockChain(
-      json.map((serializedBlock) => Block.fromJSON(serializedBlock)),
+      json.map((serializedBlock: JSONObject) =>
+        Block.fromJSON(serializedBlock),
+      ),
     );
   }
 }

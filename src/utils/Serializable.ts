@@ -1,11 +1,9 @@
-export type SerializableData =
-  | Record<string, unknown>
-  | Record<string, unknown>[];
+import { JSONData } from '../types.js';
 
 export abstract class Serializable {
-  abstract toJSON(): SerializableData;
+  abstract toJSON(): JSONData;
 
-  static fromJSON(data: SerializableData): Serializable {
+  static fromJSON(data: JSONData): Serializable {
     throw new Error('fromJSON method was not implemented.', {
       cause: data,
     });
