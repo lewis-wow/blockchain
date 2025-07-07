@@ -1,5 +1,5 @@
 import { renderString } from 'prettyjson';
-import { sha256 } from './sha256.js';
+import { sha256 } from '../utils/sha256.js';
 import { Serializable } from '../types.js';
 import type { Merge } from 'type-fest';
 

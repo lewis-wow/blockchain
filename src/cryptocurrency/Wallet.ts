@@ -9,7 +9,11 @@ export class Wallet {
   constructor() {
     this.balance = Wallet.INITIAL_BALANCE;
     this.keyPair = KeyPair.generateKeyPair();
-    this.publicKey = this.keyPair.getPublicKey('hex');
+    this.publicKey = this.keyPair.getPublicKey();
+  }
+
+  sign(dataHash: string): string {
+    return this.keyPair.sign(dataHash);
   }
 
   toJSON(): Record<string, unknown> {

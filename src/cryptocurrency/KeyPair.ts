@@ -1,8 +1,14 @@
-import { generateKeyPairSync } from 'node:crypto';
+import { createSign, createVerify, generateKeyPairSync } from 'node:crypto';
 
 export type KeyPairOptions = {
   publicKey: string;
   privateKey: string;
+};
+
+export type VerifySignatureArgs = {
+  publicKey: string;
+  data: string;
+  signature: string;
 };
 
 export class KeyPair {
@@ -14,12 +20,36 @@ export class KeyPair {
     this.privateKey = opts.privateKey;
   }
 
-  getPublicKey(encoding?: BufferEncoding): string {
-    return Buffer.from(this.publicKey, 'utf8').toString(encoding);
+  sign(data: string): string {
+    const signer = createSign(KeyPair.SIGN_ALGORITHM);
+    signer.update(data);
+    signer.end();
+
+    return signer.sign(this.getPrivateKey(), 'hex');
   }
 
-  getPrivateKey(encoding?: BufferEncoding): string {
-    return Buffer.from(this.privateKey, 'utf8').toString(encoding);
+  static verifySignature({
+    publicKey,
+    data,
+    signature,
+  }: {
+    publicKey: string;
+    data: string;
+    signature: string;
+  }): boolean {
+    const verifier = createVerify(KeyPair.SIGN_ALGORITHM);
+    verifier.update(data);
+    verifier.end();
+
+    return verifier.verify(publicKey, signature, 'hex');
+  }
+
+  getPublicKey(): string {
+    return this.publicKey;
+  }
+
+  getPrivateKey(): string {
+    return this.privateKey;
   }
 
   static generateKeyPair(): KeyPair {
@@ -37,4 +67,6 @@ export class KeyPair {
 
     return new KeyPair({ publicKey, privateKey });
   }
+
+  static readonly SIGN_ALGORITHM = 'SHA256';
 }
