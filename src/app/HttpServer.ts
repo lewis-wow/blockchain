@@ -8,6 +8,7 @@ import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
 import { P2pServer } from './P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
+import { Miner } from './Miner.js';
 
 const SERVICE_NAME = 'http-server';
 
@@ -18,6 +19,7 @@ export type HttpServerOptions = {
   p2pServer: P2pServer;
   transactionPool: TransactionPool;
   wallet: Wallet;
+  miner: Miner;
 };
 
 export type ListenArgs = {
@@ -29,6 +31,7 @@ export class HttpServer {
   private transactionPool: TransactionPool;
   private wallet: Wallet;
   private p2pServer: P2pServer;
+  private miner: Miner;
 
   private app = new Hono();
 
@@ -37,6 +40,7 @@ export class HttpServer {
     this.transactionPool = opts.transactionPool;
     this.wallet = opts.wallet;
     this.p2pServer = opts.p2pServer;
+    this.miner = opts.miner;
 
     this.app.get('/blocks', (c) => {
       return c.json(this.blockChain.getChain());
@@ -86,6 +90,12 @@ export class HttpServer {
         return c.json(transaction.toJSON());
       },
     );
+
+    this.app.post('/mine-transactions', (c) => {
+      const block = this.miner.mine();
+
+      return c.json(block.toJSON());
+    });
 
     this.app.get('/public-key', (c) => {
       return c.json({
