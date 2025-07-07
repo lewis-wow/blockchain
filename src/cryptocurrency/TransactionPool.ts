@@ -7,6 +7,27 @@ export class TransactionPool {
     return this.transactions;
   }
 
+  getValidTransactions(): Transaction[] {
+    return this.transactions.filter((transaction) => {
+      const outputTotalAmount = transaction.outputs.reduce(
+        (totalAmount, output) => totalAmount + output.amount,
+        0,
+      );
+
+      if (transaction.input!.amount !== outputTotalAmount) {
+        // throw new InvalidTransaction(transaction.input!.address);
+        return false;
+      }
+
+      if (!Transaction.verifyTransaction(transaction)) {
+        // throw new InvalidTransaction(transaction.input!.address);
+        return false;
+      }
+
+      return true;
+    });
+  }
+
   updateOrAddTransaction(transaction: Transaction): void {
     const transactionWithIdIndex = this.transactions.findIndex(
       (t) => t.id === transaction.id,
