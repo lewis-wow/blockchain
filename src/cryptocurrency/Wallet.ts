@@ -4,6 +4,7 @@ import { TransactionPool } from './TransactionPool.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Transaction } from './Transaction.js';
 import { BlockChain } from '../blockchain/BlockChain.js';
+import { JSONArray, JSONObject } from '../types.js';
 
 export type CreateTransactionArgs = {
   amount: number;
@@ -82,7 +83,10 @@ export class Wallet {
     const transactions: Transaction[] = [];
 
     for (const block of blockChain.getChain()) {
-      const dataTransactions = block.data as unknown as Transaction[];
+      const dataTransactions = (
+        (block.data as JSONObject).transactions as JSONArray
+      ).map((transaction) => Transaction.fromJSON(transaction as JSONObject));
+
       for (const transaction of dataTransactions) {
         transactions.push(transaction);
       }

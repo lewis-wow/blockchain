@@ -45,9 +45,9 @@ export class Miner {
     ];
 
     // Create a block consisting of the valid transactions
-    const block = this.blockChain.addBlock(
-      transactions.map((transaction) => transaction.toJSON()),
-    );
+    const block = this.blockChain.addBlock({
+      transactions: transactions.map((transaction) => transaction.toJSON()),
+    });
 
     // Sync the chains in peer-to-peer server
     this.p2pServer.syncChains();

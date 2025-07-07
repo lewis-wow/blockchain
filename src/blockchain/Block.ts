@@ -110,7 +110,9 @@ export class Block extends Serializable {
       timestamp: epoch,
       lastHash: sha256('genesis-last-hash'),
       hash: sha256('genesis-hash'),
-      data: [],
+      data: {
+        transactions: [],
+      },
       nonce: 0,
       difficulty: Block.DIFFICULTY,
     });
