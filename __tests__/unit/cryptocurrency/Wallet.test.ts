@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { Wallet } from '../../../src/cryptocurrency/Wallet.js';
 import { TransactionPool } from '../../../src/cryptocurrency/TransactionPool.js';
 import { Transaction } from '../../../src/cryptocurrency/Transaction.js';
+import { BlockChain } from '../../../src/blockchain/BlockChain.js';
 
 describe('Wallet', () => {
   let wallet: Wallet;
@@ -18,9 +19,11 @@ describe('Wallet', () => {
     let amount: number,
       transaction: Transaction,
       transactionPool: TransactionPool,
-      recipientAddress: string;
+      recipientAddress: string,
+      blockChain: BlockChain;
 
     beforeEach(() => {
+      blockChain = new BlockChain();
       amount = 100;
       recipientAddress = 'recipientAddress';
       transactionPool = new TransactionPool();
@@ -28,6 +31,7 @@ describe('Wallet', () => {
         amount,
         recipientAddress,
         transactionPool,
+        blockChain,
       });
     });
 
@@ -46,6 +50,7 @@ describe('Wallet', () => {
         amount,
         recipientAddress,
         transactionPool,
+        blockChain,
       });
 
       // @ts-expect-error - private property
@@ -70,6 +75,7 @@ describe('Wallet', () => {
           amount: wallet.balance + 1,
           recipientAddress: 'recipientAddress',
           transactionPool,
+          blockChain,
         }),
       ).toThrowError();
     });

@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { TransactionPool } from '../../../src/cryptocurrency/TransactionPool.js';
 import { Transaction } from '../../../src/cryptocurrency/Transaction.js';
 import { Wallet } from '../../../src/cryptocurrency/Wallet.js';
+import { BlockChain } from '../../../src/blockchain/BlockChain.js';
 
 describe('TransactionPool', () => {
   describe('updateOrAddTransaction()', () => {
@@ -33,7 +34,8 @@ describe('TransactionPool', () => {
       amount: number,
       recipientAddress: string,
       transaction: Transaction,
-      validTransactions: Transaction[];
+      validTransactions: Transaction[],
+      blockChain: BlockChain;
 
     beforeEach(() => {
       transactionPool = new TransactionPool();
@@ -41,6 +43,7 @@ describe('TransactionPool', () => {
       amount = 100;
       recipientAddress = 'recipientAddress';
       validTransactions = [];
+      blockChain = new BlockChain();
 
       for (let i = 0; i < 5; i++) {
         wallet = new Wallet();
@@ -48,6 +51,7 @@ describe('TransactionPool', () => {
           amount,
           recipientAddress,
           transactionPool,
+          blockChain,
         });
 
         if (i % 2) {
@@ -73,9 +77,11 @@ describe('TransactionPool', () => {
       amount: number,
       recipientAddress: string,
       transaction: Transaction,
-      validTransactions: Transaction[];
+      validTransactions: Transaction[],
+      blockChain: BlockChain;
 
     beforeEach(() => {
+      blockChain = new BlockChain();
       transactionPool = new TransactionPool();
       wallet = new Wallet();
       amount = 100;
@@ -88,6 +94,7 @@ describe('TransactionPool', () => {
           amount,
           recipientAddress,
           transactionPool,
+          blockChain,
         });
 
         if (i % 2) {

@@ -83,6 +83,7 @@ export class HttpServer {
           amount,
           recipientAddress: recipient,
           transactionPool: this.transactionPool,
+          blockChain: this.blockChain,
         });
 
         this.p2pServer.broadcastTransactions(transaction);

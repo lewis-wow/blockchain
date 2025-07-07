@@ -3,11 +3,13 @@ import { KeyPair } from './KeyPair.js';
 import { TransactionPool } from './TransactionPool.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Transaction } from './Transaction.js';
+import { BlockChain } from '../blockchain/BlockChain.js';
 
 export type CreateTransactionArgs = {
   amount: number;
   recipientAddress: string;
   transactionPool: TransactionPool;
+  blockChain: BlockChain;
 };
 
 export class Wallet {
@@ -29,7 +31,10 @@ export class Wallet {
     amount,
     recipientAddress,
     transactionPool,
+    blockChain,
   }: CreateTransactionArgs): Transaction {
+    this.balance = this.calculateBalance(blockChain);
+
     if (amount > this.balance) {
       throw new AmountExceedsBalance(amount);
     }
@@ -70,6 +75,49 @@ export class Wallet {
         Block: this.toJSON(),
       }),
     );
+  }
+
+  calculateBalance(blockChain: BlockChain): number {
+    let balance = this.balance;
+    const transactions: Transaction[] = [];
+
+    for (const block of blockChain.getChain()) {
+      const dataTransactions = block.data as unknown as Transaction[];
+      for (const transaction of dataTransactions) {
+        transactions.push(transaction);
+      }
+    }
+
+    const walletInputTransactions = transactions.filter(
+      (transaction) => transaction.input!.address === this.publicKey,
+    );
+
+    let startTime = 0;
+
+    if (walletInputTransactions.length > 0) {
+      const mostRecentWalletInputTransaction = walletInputTransactions.reduce(
+        (prev, current) =>
+          prev.input!.timestamp.getTime() > current.input!.timestamp.getTime()
+            ? prev
+            : current,
+      );
+
+      balance = mostRecentWalletInputTransaction.outputs.find(
+        (output) => output.address === this.publicKey,
+      )!.amount;
+      startTime = mostRecentWalletInputTransaction.input!.timestamp.getTime();
+    }
+
+    for (const transaction of transactions) {
+      if (transaction.input!.timestamp.getTime() > startTime) {
+        balance +=
+          transaction.outputs.find(
+            (output) => output.address === this.publicKey,
+          )?.amount ?? 0;
+      }
+    }
+
+    return balance;
   }
 
   static readonly INITIAL_BALANCE = 500;
