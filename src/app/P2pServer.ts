@@ -112,6 +112,12 @@ export class P2pServer {
     socket.send(ChainMessage.stringify(this.blockChain));
   }
 
+  public syncChains(): void {
+    for (const socket of this.sockets) {
+      this.sendChain(socket);
+    }
+  }
+
   private handleTransaction(transaction: Transaction): void {
     log.debug('Another peer transaction', transaction);
 
@@ -122,18 +128,24 @@ export class P2pServer {
     socket.send(TransactionMessage.stringify(transaction));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private handleClearTransactions(_?: undefined): void {}
-
-  public syncChains(): void {
-    for (const socket of this.sockets) {
-      this.sendChain(socket);
-    }
-  }
-
   public broadcastTransactions(transaction: Transaction): void {
     for (const socket of this.sockets) {
       this.sendTransaction(socket, transaction);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleClearTransactions(_?: undefined): void {
+    this.transactionPool.clear();
+  }
+
+  private sendClearTransactions(socket: WebSocket): void {
+    socket.send(ClearTransactionsMessage.stringify(null));
+  }
+
+  public broadcastClearTransactions(): void {
+    for (const socket of this.sockets) {
+      this.sendClearTransactions(socket);
     }
   }
 }

@@ -1,3 +1,4 @@
+import { Block } from '../blockchain/Block.js';
 import { BlockChain } from '../blockchain/BlockChain.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
@@ -31,7 +32,7 @@ export class Miner {
    * Clear the transaction pool
    * Broadcast to every miner the transaction pool clear
    */
-  mine(): void {
+  mine(): Block {
     const validTransactions = this.transactionPool.getValidTransactions();
 
     // Include a reward for a miner
@@ -55,6 +56,9 @@ export class Miner {
     this.transactionPool.clear();
 
     // Broadcast to every miner the transaction pool clear
+    this.p2pServer.broadcastClearTransactions();
+
+    return block;
   }
 
   static readonly MINING_REWARD = 50;
