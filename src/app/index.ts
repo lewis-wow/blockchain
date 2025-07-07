@@ -3,6 +3,9 @@ import { P2pServer } from './P2pServer.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { HttpServer } from './HttpServer.js';
+import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
+import { Wallet } from '../cryptocurrency/Wallet.js';
+import { HttpBootstrapServer } from './HttpBootstrapServer.js';
 
 yargs(hideBin(process.argv))
   .command(
@@ -32,6 +35,8 @@ yargs(hideBin(process.argv))
       const peers = argv.peers;
 
       const blockChain = new BlockChain();
+      const wallet = new Wallet();
+      const transactionPool = new TransactionPool();
 
       const p2pServer = new P2pServer({
         blockChain,
@@ -43,9 +48,29 @@ yargs(hideBin(process.argv))
       const httpServer = new HttpServer({
         blockChain,
         p2pServer,
+        wallet,
+        transactionPool,
       });
 
       httpServer.listen({ port });
+    },
+  )
+  .command(
+    'bootstrap <port>',
+    'start the bootstrap server',
+    (yargs) => {
+      return yargs.positional('port', {
+        describe: 'port to bind on http bootstrap server',
+        type: 'number',
+        default: 4000,
+      });
+    },
+    (argv) => {
+      const port = argv.port;
+
+      const httpBootstrapServer = new HttpBootstrapServer();
+
+      httpBootstrapServer.listen({ port });
     },
   )
   .help()
