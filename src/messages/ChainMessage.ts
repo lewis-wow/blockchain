@@ -1,16 +1,14 @@
 import { BlockChain } from '../blockchain/BlockChain.js';
+import { JSONObject } from '../types.js';
 import { Message } from './Message.js';
 
 export class ChainMessage extends Message {
-  static create(data: Record<string, unknown>[]): BlockChain {
+  static fromJSON(data: JSONObject[]): BlockChain {
     return BlockChain.fromJSON(data);
   }
 
-  static serialize(blockChain: BlockChain): string {
-    return super.stringify(
-      ChainMessage.MESSAGE_TYPE,
-      blockChain.getChain().map((block) => block.toJSON()),
-    );
+  static toJSON(blockChain: BlockChain): JSONObject[] {
+    return blockChain.getChain().map((block) => block.toJSON());
   }
 
   static readonly MESSAGE_TYPE = 'CHAIN';

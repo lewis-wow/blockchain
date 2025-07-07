@@ -9,6 +9,8 @@ import { TransactionMessage } from '../messages/TransactionMessage.js';
 import { Message } from '../messages/Message.js';
 import { match } from 'ts-pattern';
 import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
+import { ClearTransactionsMessage } from '../messages/ClearTransactionsMessage.js';
+import { JSONObject } from '../types.js';
 
 const SERVICE_NAME = 'peer-to-peer-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -79,18 +81,21 @@ export class P2pServer {
 
   private messageHandler(socket: WebSocket): void {
     socket.on('message', (message) => {
-      const { messageType, data } = Message.parseMessage(message);
-
-      log.debug(messageType);
+      const { messageType, data } = Message.parse(message);
 
       match(messageType)
+        .with(undefined, null, () => {})
         .with(ChainMessage.MESSAGE_TYPE, () => {
-          this.handleChain(ChainMessage.create(data));
+          this.handleChain(ChainMessage.fromJSON(data as JSONObject[]));
         })
         .with(TransactionMessage.MESSAGE_TYPE, () => {
-          this.handleTransaction(TransactionMessage.create(data));
+          this.handleTransaction(
+            TransactionMessage.fromJSON(data as JSONObject),
+          );
         })
-        .with(undefined, () => null)
+        .with(ClearTransactionsMessage.MESSAGE_TYPE, () => {
+          this.handleClearTransactions(ClearTransactionsMessage.fromJSON());
+        })
         .otherwise(() => {
           throw new InvalidMessageType();
         });
@@ -104,7 +109,7 @@ export class P2pServer {
   }
 
   private sendChain(socket: WebSocket): void {
-    socket.send(ChainMessage.serialize(this.blockChain));
+    socket.send(ChainMessage.stringify(this.blockChain));
   }
 
   private handleTransaction(transaction: Transaction): void {
@@ -114,8 +119,11 @@ export class P2pServer {
   }
 
   private sendTransaction(socket: WebSocket, transaction: Transaction): void {
-    socket.send(TransactionMessage.serialize(transaction));
+    socket.send(TransactionMessage.stringify(transaction));
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private handleClearTransactions(_?: undefined): void {}
 
   public syncChains(): void {
     for (const socket of this.sockets) {

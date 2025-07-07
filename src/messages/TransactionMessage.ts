@@ -1,16 +1,14 @@
 import { Transaction } from '../cryptocurrency/Transaction.js';
+import { JSONObject } from '../types.js';
 import { Message } from './Message.js';
 
 export class TransactionMessage extends Message {
-  static create(data: Record<string, unknown>): Transaction {
+  static fromJSON(data: JSONObject): Transaction {
     return Transaction.fromJSON(data);
   }
 
-  static serialize(transaction: Transaction): string {
-    return super.stringify(
-      TransactionMessage.MESSAGE_TYPE,
-      transaction.toJSON(),
-    );
+  static toJSON(transaction: Transaction): JSONObject {
+    return transaction.toJSON();
   }
 
   static readonly MESSAGE_TYPE = 'TRANSACTION';
