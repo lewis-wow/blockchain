@@ -23,7 +23,7 @@ describe('Transaction', () => {
         });
       });
 
-      test('`amount` is substracted from the wallet balance in outputs', () => {
+      test('amount is substracted from the wallet balance in outputs', () => {
         expect(
           transaction.outputs.find(
             (output) => output.address === senderWallet.publicKey,
@@ -31,7 +31,7 @@ describe('Transaction', () => {
         ).toEqual(senderWallet.balance - amount);
       });
 
-      test('`amount` is added to the recipient in outputs', () => {
+      test('amount is added to the recipient in outputs', () => {
         expect(
           transaction.outputs.find(
             (output) => output.address === recipientWallet.publicKey,
@@ -39,19 +39,19 @@ describe('Transaction', () => {
         ).toEqual(amount);
       });
 
-      test('`amount` is the balance of the sender wallet in input', () => {
+      test('amount is the balance of the sender wallet in input', () => {
         expect(transaction.input.amount).toEqual(senderWallet.balance);
       });
-    });
 
-    test('amount is more than balance', () => {
-      expect(() =>
-        Transaction.createTransaction({
-          senderWallet,
-          recepientAddress: recipientWallet.publicKey,
-          amount: Wallet.INITIAL_BALANCE + 1,
-        }),
-      ).toThrowError();
+      test('amount is more than balance', () => {
+        expect(() =>
+          Transaction.createTransaction({
+            senderWallet,
+            recepientAddress: recipientWallet.publicKey,
+            amount: Wallet.INITIAL_BALANCE + 1,
+          }),
+        ).toThrowError();
+      });
     });
   });
 
@@ -78,6 +78,51 @@ describe('Transaction', () => {
       };
 
       expect(Transaction.verifyTransaction(transaction)).toBe(false);
+    });
+  });
+
+  describe('update()', () => {
+    let transaction: Transaction;
+    const amount = 100;
+    const udpateAmount = 200;
+    const updateRecipientWallet = new Wallet();
+
+    beforeEach(() => {
+      transaction = Transaction.createTransaction({
+        senderWallet,
+        recepientAddress: recipientWallet.publicKey,
+        amount,
+      }).update({
+        senderWallet,
+        recepientAddress: updateRecipientWallet.publicKey,
+        amount: udpateAmount,
+      });
+    });
+
+    test('amount is added to the recipient in outputs', () => {
+      expect(
+        transaction.outputs.find(
+          (output) => output.address === updateRecipientWallet.publicKey,
+        ).amount,
+      ).toEqual(udpateAmount);
+    });
+
+    test('amount is substracted from the wallet balance in outputs', () => {
+      expect(
+        transaction.outputs.find(
+          (output) => output.address === senderWallet.publicKey,
+        ).amount,
+      ).toEqual(senderWallet.balance - amount - udpateAmount);
+    });
+
+    test('amount is more than balance', () => {
+      expect(() =>
+        transaction.update({
+          senderWallet,
+          recepientAddress: updateRecipientWallet.publicKey,
+          amount: Wallet.INITIAL_BALANCE + 1,
+        }),
+      ).toThrowError();
     });
   });
 });
