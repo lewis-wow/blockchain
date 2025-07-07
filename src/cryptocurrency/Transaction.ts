@@ -23,7 +23,7 @@ export type TransactionOptions = {
 
 export type CreateTransactionArgs = {
   senderWallet: Wallet;
-  recepientAddress: string;
+  recipientAddress: string;
   amount: number;
 };
 
@@ -34,7 +34,7 @@ export class Transaction {
 
   update({
     senderWallet,
-    recepientAddress,
+    recipientAddress,
     amount,
   }: CreateTransactionArgs): Transaction {
     /**
@@ -42,7 +42,7 @@ export class Transaction {
      */
     const senderResultOutput = this.outputs.find(
       (output) => output.address === senderWallet.publicKey,
-    );
+    )!;
 
     if (amount > senderResultOutput.amount) {
       throw new AmountExceedsBalance(amount);
@@ -50,7 +50,7 @@ export class Transaction {
 
     senderResultOutput.amount -= amount;
 
-    this.outputs.push({ address: recepientAddress, amount });
+    this.outputs.push({ address: recipientAddress, amount });
 
     Transaction.signTransaction(this, senderWallet);
 
@@ -59,7 +59,7 @@ export class Transaction {
 
   static createTransaction({
     senderWallet,
-    recepientAddress,
+    recipientAddress,
     amount,
   }: CreateTransactionArgs): Transaction {
     if (amount > senderWallet.balance) {
@@ -75,7 +75,7 @@ export class Transaction {
       },
       {
         amount,
-        address: recepientAddress,
+        address: recipientAddress,
       },
     ];
 
@@ -91,7 +91,7 @@ export class Transaction {
   }
 
   static signTransaction(transaction: Transaction, senderWallet: Wallet): void {
-    transaction.input.signature = senderWallet.sign(
+    transaction.input!.signature = senderWallet.sign(
       sha256(JSON.stringify(transaction.outputs)),
     );
   }
@@ -100,8 +100,8 @@ export class Transaction {
     const { input } = transaction;
 
     return KeyPair.verifySignature({
-      publicKey: input.address,
-      signature: input.signature,
+      publicKey: input!.address,
+      signature: input!.signature!,
       data: sha256(JSON.stringify(transaction.outputs)),
     });
   }

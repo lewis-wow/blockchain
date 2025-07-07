@@ -1,5 +1,14 @@
 import { renderString } from 'prettyjson';
 import { KeyPair } from './KeyPair.js';
+import { TransactionPool } from './TransactionPool.js';
+import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
+import { Transaction } from './Transaction.js';
+
+export type CreateTransactionArgs = {
+  amount: number;
+  recipientAddress: string;
+  transactionPool: TransactionPool;
+};
 
 export class Wallet {
   balance: number;
@@ -14,6 +23,38 @@ export class Wallet {
 
   sign(dataHash: string): string {
     return this.keyPair.sign(dataHash);
+  }
+
+  createTransaction({
+    amount,
+    recipientAddress,
+    transactionPool,
+  }: CreateTransactionArgs): Transaction {
+    if (amount > this.balance) {
+      throw new AmountExceedsBalance(amount);
+    }
+
+    let transaction = transactionPool.findTransactionBySenderAddress(
+      this.publicKey,
+    );
+
+    if (transaction) {
+      transaction.update({
+        senderWallet: this,
+        amount,
+        recipientAddress,
+      });
+    } else {
+      transaction = Transaction.createTransaction({
+        senderWallet: this,
+        amount,
+        recipientAddress,
+      });
+
+      transactionPool.updateOrAddTransaction(transaction);
+    }
+
+    return transaction;
   }
 
   toJSON(): Record<string, unknown> {

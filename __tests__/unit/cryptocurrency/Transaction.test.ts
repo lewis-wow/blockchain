@@ -18,7 +18,7 @@ describe('Transaction', () => {
       beforeEach(() => {
         transaction = Transaction.createTransaction({
           senderWallet,
-          recepientAddress: recipientWallet.publicKey,
+          recipientAddress: recipientWallet.publicKey,
           amount,
         });
       });
@@ -27,7 +27,7 @@ describe('Transaction', () => {
         expect(
           transaction.outputs.find(
             (output) => output.address === senderWallet.publicKey,
-          ).amount,
+          )!.amount,
         ).toEqual(senderWallet.balance - amount);
       });
 
@@ -35,20 +35,20 @@ describe('Transaction', () => {
         expect(
           transaction.outputs.find(
             (output) => output.address === recipientWallet.publicKey,
-          ).amount,
+          )!.amount,
         ).toEqual(amount);
       });
 
       test('amount is the balance of the sender wallet in input', () => {
-        expect(transaction.input.amount).toEqual(senderWallet.balance);
+        expect(transaction.input!.amount).toEqual(senderWallet.balance);
       });
 
       test('amount is more than balance', () => {
         expect(() =>
           Transaction.createTransaction({
             senderWallet,
-            recepientAddress: recipientWallet.publicKey,
-            amount: Wallet.INITIAL_BALANCE + 1,
+            recipientAddress: recipientWallet.publicKey,
+            amount: senderWallet.balance + 1,
           }),
         ).toThrowError();
       });
@@ -62,7 +62,7 @@ describe('Transaction', () => {
     beforeEach(() => {
       transaction = Transaction.createTransaction({
         senderWallet,
-        recepientAddress: recipientWallet.publicKey,
+        recipientAddress: recipientWallet.publicKey,
         amount,
       });
     });
@@ -90,11 +90,11 @@ describe('Transaction', () => {
     beforeEach(() => {
       transaction = Transaction.createTransaction({
         senderWallet,
-        recepientAddress: recipientWallet.publicKey,
+        recipientAddress: recipientWallet.publicKey,
         amount,
       }).update({
         senderWallet,
-        recepientAddress: updateRecipientWallet.publicKey,
+        recipientAddress: updateRecipientWallet.publicKey,
         amount: udpateAmount,
       });
     });
@@ -103,7 +103,7 @@ describe('Transaction', () => {
       expect(
         transaction.outputs.find(
           (output) => output.address === updateRecipientWallet.publicKey,
-        ).amount,
+        )!.amount,
       ).toEqual(udpateAmount);
     });
 
@@ -111,7 +111,7 @@ describe('Transaction', () => {
       expect(
         transaction.outputs.find(
           (output) => output.address === senderWallet.publicKey,
-        ).amount,
+        )!.amount,
       ).toEqual(senderWallet.balance - amount - udpateAmount);
     });
 
@@ -119,8 +119,8 @@ describe('Transaction', () => {
       expect(() =>
         transaction.update({
           senderWallet,
-          recepientAddress: updateRecipientWallet.publicKey,
-          amount: Wallet.INITIAL_BALANCE + 1,
+          recipientAddress: updateRecipientWallet.publicKey,
+          amount: senderWallet.balance + 1,
         }),
       ).toThrowError();
     });

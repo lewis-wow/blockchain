@@ -1,5 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { Wallet } from '../../../src/cryptocurrency/Wallet.js';
+import { TransactionPool } from '../../../src/cryptocurrency/TransactionPool.js';
+import { Transaction } from '../../../src/cryptocurrency/Transaction.js';
 
 describe('Wallet', () => {
   let wallet: Wallet;
@@ -10,5 +12,57 @@ describe('Wallet', () => {
 
   test('`balance` match `Wallet.INITIAL_BALANCE`', () => {
     expect(wallet.balance).toEqual(Wallet.INITIAL_BALANCE);
+  });
+
+  describe('createTransaction()', () => {
+    let amount: number,
+      transaction: Transaction,
+      transactionPool: TransactionPool;
+
+    beforeEach(() => {
+      amount = 100;
+      transactionPool = new TransactionPool();
+      transaction = wallet.createTransaction({
+        amount,
+        recipientAddress: 'recipientAddress',
+        transactionPool,
+      });
+    });
+
+    test('creates a transaction and adds it to transaction pool', () => {
+      // @ts-expect-error - private property
+      expect(transactionPool.transactions.length).toBe(1);
+      expect(
+        transaction.outputs.find(
+          (output) => output.address === wallet.publicKey,
+        )!.amount,
+      ).toEqual(wallet.balance - amount);
+    });
+
+    test('update a transaction by calling `createTransaction` twice', () => {
+      wallet.createTransaction({
+        amount,
+        recipientAddress: 'recipientAddress',
+        transactionPool,
+      });
+
+      // @ts-expect-error - private property
+      expect(transactionPool.transactions.length).toBe(1);
+      expect(
+        transaction.outputs.find(
+          (output) => output.address === wallet.publicKey,
+        )!.amount,
+      ).toEqual(wallet.balance - 2 * amount);
+    });
+
+    test('amount is more than balance', () => {
+      expect(() =>
+        wallet.createTransaction({
+          amount: wallet.balance + 1,
+          recipientAddress: 'recipientAddress',
+          transactionPool,
+        }),
+      ).toThrowError();
+    });
   });
 });

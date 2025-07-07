@@ -1,7 +1,7 @@
 import { Transaction } from './Transaction.js';
 
 export class TransactionPool {
-  transactions: Transaction[] = [];
+  private transactions: Transaction[] = [];
 
   updateOrAddTransaction(transaction: Transaction): void {
     const transactionWithIdIndex = this.transactions.findIndex(
@@ -15,5 +15,13 @@ export class TransactionPool {
     }
 
     this.transactions.push(transaction);
+  }
+
+  findTransactionBySenderAddress(
+    senderAddress: string,
+  ): Transaction | undefined {
+    return this.transactions.find(
+      (transaction) => transaction.input!.address === senderAddress,
+    );
   }
 }
