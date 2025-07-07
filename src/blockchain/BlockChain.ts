@@ -1,7 +1,8 @@
 import { first, isEqual, last } from 'lodash-es';
-import { Block, SerializedBlock } from './Block.js';
+import { Block } from './Block.js';
 import { log as defaultLog } from '../utils/logger.js';
-import { Serializable } from '../types.js';
+import { Serializable } from '../utils/Serializable.js';
+import { JSONData } from '../types.js';
 
 const SERVICE_NAME = 'blockchain';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -15,21 +16,23 @@ export enum ReplaceChainResult {
 /**
  * Represents a simple blockchain composed of linked blocks.
  */
-export class BlockChain {
+export class BlockChain extends Serializable {
   /**
    * The internal chain of blocks. Initialized with the genesis block.
    * @private
    * @type {Block[]}
    */
-  constructor(private chain: Block[] = [Block.genesis()]) {}
+  constructor(private chain: Block[] = [Block.genesis()]) {
+    super();
+  }
 
   /**
    * Adds a new block to the chain with the given data.
-   * @param {Serializable} data - The data to be included in the new block.
+   * @param {JSONData} data - The data to be included in the new block.
    * @returns {Block} The newly added block.
    */
-  addBlock(data: Serializable): Block {
-    const lastBlock = last(this.chain);
+  addBlock(data: JSONData): Block {
+    const lastBlock = last(this.chain)!;
     const block = Block.mineBlock(lastBlock, data);
     this.chain.push(block);
 
@@ -100,11 +103,11 @@ export class BlockChain {
     return ReplaceChainResult.NEW_CHAIN_REPLACE;
   }
 
-  toJSON(): SerializedBlock[] {
+  toJSON(): Record<string, unknown>[] {
     return this.getChain().map((block) => block.toJSON());
   }
 
-  static fromJSON(json: SerializedBlock[]): BlockChain {
+  static fromJSON(json: Record<string, unknown>[]): BlockChain {
     return new BlockChain(
       json.map((serializedBlock) => Block.fromJSON(serializedBlock)),
     );

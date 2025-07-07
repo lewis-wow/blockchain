@@ -81,6 +81,8 @@ export class HttpServer {
           transactionPool: this.transactionPool,
         });
 
+        this.p2pServer.broadcastTransactions(transaction);
+
         return c.json(transaction.toJSON());
       },
     );

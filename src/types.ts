@@ -1,8 +1,8 @@
-export type Serializable =
+export type JSONData =
   | string
   | number
   | null
   | undefined
   | Date
-  | Serializable[]
-  | { [key: string]: Serializable };
+  | JSONData[]
+  | { [key: string]: JSONData };

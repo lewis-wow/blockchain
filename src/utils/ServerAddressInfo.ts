@@ -28,7 +28,7 @@ export class ServerAddressInfo {
   }
 
   static parse(
-    addr: string | AddressInfo,
+    addr: string | AddressInfo | null,
     protocol: string,
   ): ServerAddressInfo {
     if (typeof addr === 'string') {

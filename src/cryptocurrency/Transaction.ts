@@ -3,6 +3,7 @@ import { Wallet } from './Wallet.js';
 import { sha256 } from '../utils/sha256.js';
 import { KeyPair } from './KeyPair.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
+import { Serializable } from '../utils/Serializable.js';
 
 export type TransactionInput = {
   timestamp: Date;
@@ -27,7 +28,7 @@ export type CreateTransactionArgs = {
   amount: number;
 };
 
-export class Transaction {
+export class Transaction extends Serializable {
   id = uuid();
   input: TransactionInput | null = null;
   outputs: TransactionOutput[] = [];
@@ -57,12 +58,21 @@ export class Transaction {
     return this;
   }
 
-  toJSON(): Record<string, unknown> {
+  override toJSON(): Record<string, unknown> {
     return {
       id: this.id,
       input: this.input,
       outputs: this.outputs,
     };
+  }
+
+  static override fromJSON(json: Record<string, unknown>): Transaction {
+    const transaction = new Transaction();
+    transaction.id = json.id as string;
+    transaction.input = json.input as TransactionInput;
+    transaction.outputs = json.outputs as TransactionOutput[];
+
+    return transaction;
   }
 
   static createTransaction({

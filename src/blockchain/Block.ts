@@ -1,7 +1,7 @@
 import { renderString } from 'prettyjson';
 import { sha256 } from '../utils/sha256.js';
-import { Serializable } from '../types.js';
-import type { Merge } from 'type-fest';
+import { JSONData } from '../types.js';
+import { Serializable } from '../utils/Serializable.js';
 
 /**
  * Options required to construct a Block.
@@ -15,7 +15,7 @@ export type BlockOptions = {
   timestamp: Date;
   lastHash: string;
   hash: string;
-  data: Serializable;
+  data: JSONData;
   nonce: number;
   difficulty: number;
 };
@@ -30,26 +30,19 @@ export type BlockOptions = {
 export type HashArgs = {
   timestamp: Date;
   lastHash: string;
-  data: Serializable;
+  data: JSONData;
   nonce: number;
   difficulty: number;
 };
 
-export type SerializedBlock = Merge<
-  BlockOptions,
-  {
-    timestamp: string;
-  }
->;
-
 /**
  * Represents a block in a blockchain.
  */
-export class Block {
+export class Block extends Serializable {
   timestamp: Date;
   lastHash: string;
   hash: string;
-  data: Serializable;
+  data: JSONData;
   nonce: number;
   difficulty: number;
 
@@ -58,6 +51,8 @@ export class Block {
    * @param {BlockOptions} opts - Configuration object for the block.
    */
   constructor(opts: BlockOptions) {
+    super();
+
     this.timestamp = opts.timestamp;
     this.lastHash = opts.lastHash;
     this.hash = opts.hash;
@@ -70,7 +65,7 @@ export class Block {
    * Converts the block to a JSON-friendly object.
    * @returns {object} JSON representation of the block.
    */
-  toJSON(): SerializedBlock {
+  toJSON(): Record<string, unknown> {
     return {
       timestamp: this.timestamp.toISOString(),
       lastHash: this.lastHash,
@@ -81,14 +76,14 @@ export class Block {
     };
   }
 
-  static fromJSON(json: SerializedBlock): Block {
+  static fromJSON(json: Record<string, unknown>): Block {
     return new Block({
-      timestamp: new Date(json.timestamp),
-      lastHash: json.lastHash,
-      hash: json.hash,
-      data: json.data,
-      nonce: json.nonce,
-      difficulty: json.difficulty,
+      timestamp: new Date(json.timestamp as string),
+      lastHash: json.lastHash as string,
+      hash: json.hash as string,
+      data: json.data as JSONData,
+      nonce: json.nonce as number,
+      difficulty: json.difficulty as number,
     });
   }
 
@@ -136,7 +131,7 @@ export class Block {
    * @param {object} data - New data to include in the block.
    * @returns {Block} The newly mined block.
    */
-  static mineBlock(lastBlock: Block, data: Serializable): Block {
+  static mineBlock(lastBlock: Block, data: JSONData): Block {
     const lastHash = lastBlock.hash;
     let difficulty = lastBlock.difficulty;
 

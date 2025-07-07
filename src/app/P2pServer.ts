@@ -2,12 +2,20 @@ import { BlockChain } from '../blockchain/BlockChain.js';
 import { WebSocketServer, WebSocket } from 'ws';
 import { log as defaultLog } from '../utils/logger.js';
 import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
+import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
+import { Transaction } from '../cryptocurrency/Transaction.js';
+import { ChainMessage } from '../messages/ChainMessage.js';
+import { TransactionMessage } from '../messages/TransactionMessage.js';
+import { Message } from '../messages/Message.js';
+import { match } from 'ts-pattern';
+import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
 
 const SERVICE_NAME = 'peer-to-peer-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type P2pServerOptions = {
   blockChain: BlockChain;
+  transactionPool: TransactionPool;
   peers: string[];
 };
 
@@ -18,10 +26,12 @@ export type ListenArgs = {
 export class P2pServer {
   private sockets: WebSocket[] = [];
   private blockChain: BlockChain;
+  private transactionPool: TransactionPool;
   private peers: string[];
 
   constructor(opts: P2pServerOptions) {
     this.blockChain = opts.blockChain;
+    this.transactionPool = opts.transactionPool;
     this.peers = opts.peers;
   }
 
@@ -64,24 +74,55 @@ export class P2pServer {
 
     this.messageHandler(socket);
 
-    socket.send(JSON.stringify(this.blockChain.toJSON()));
+    this.sendChain(socket);
   }
 
   private messageHandler(socket: WebSocket): void {
     socket.on('message', (message) => {
-      const anotherPeerBlockChain = BlockChain.fromJSON(
-        JSON.parse(message.toString()),
-      );
+      const { messageType, data } = Message.parseMessage(message);
 
-      log.debug('Another peer blockchain', anotherPeerBlockChain);
-
-      this.blockChain.replaceChain(anotherPeerBlockChain.getChain());
+      match(messageType)
+        .with(ChainMessage.MESSAGE_TYPE, () => {
+          this.handleChain(ChainMessage.create(data));
+        })
+        .with(TransactionMessage.MESSAGE_TYPE, () => {
+          this.handleTransaction(TransactionMessage.create(data));
+        })
+        .otherwise(() => {
+          throw new InvalidMessageType();
+        });
     });
+  }
+
+  private handleChain(blockChain: BlockChain): void {
+    log.debug('Another peer blockchain', blockChain);
+
+    this.blockChain.replaceChain(blockChain.getChain());
+  }
+
+  private sendChain(socket: WebSocket): void {
+    socket.send(ChainMessage.serialize(this.blockChain));
+  }
+
+  private handleTransaction(transaction: Transaction): void {
+    log.debug('Another peer transaction', transaction);
+
+    this.transactionPool.updateOrAddTransaction(transaction);
+  }
+
+  private sendTransaction(socket: WebSocket, transaction: Transaction): void {
+    socket.send(TransactionMessage.serialize(transaction));
   }
 
   public syncChains(): void {
     for (const socket of this.sockets) {
-      socket.send(JSON.stringify(this.blockChain.toJSON()));
+      this.sendChain(socket);
+    }
+  }
+
+  public broadcastTransactions(transaction: Transaction): void {
+    for (const socket of this.sockets) {
+      this.sendTransaction(socket, transaction);
     }
   }
 }

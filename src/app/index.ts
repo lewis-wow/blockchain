@@ -40,6 +40,7 @@ yargs(hideBin(process.argv))
 
       const p2pServer = new P2pServer({
         blockChain,
+        transactionPool,
         peers,
       });
 
