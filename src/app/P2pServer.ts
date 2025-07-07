@@ -103,7 +103,7 @@ export class P2pServer {
   }
 
   private handleChain(blockChain: BlockChain): void {
-    log.debug('Another peer blockchain', blockChain);
+    log.debug('handleChain()', blockChain);
 
     this.blockChain.replaceChain(blockChain.getChain());
   }
@@ -119,7 +119,7 @@ export class P2pServer {
   }
 
   private handleTransaction(transaction: Transaction): void {
-    log.debug('Another peer transaction', transaction);
+    log.debug('handleTransaction()', transaction);
 
     this.transactionPool.updateOrAddTransaction(transaction);
   }
@@ -136,6 +136,8 @@ export class P2pServer {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private handleClearTransactions(_?: undefined): void {
+    log.debug('handleClearTransactions()');
+
     this.transactionPool.clear();
   }
 
