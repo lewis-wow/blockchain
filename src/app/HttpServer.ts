@@ -86,6 +86,12 @@ export class HttpServer {
         return c.json(transaction.toJSON());
       },
     );
+
+    this.app.get('/public-key', (c) => {
+      return c.json({
+        publicKey: this.wallet.publicKey,
+      });
+    });
   }
 
   listen({ port }: ListenArgs): void {
