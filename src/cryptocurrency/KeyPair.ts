@@ -1,8 +1,14 @@
-import { createSign, createVerify, generateKeyPairSync } from 'node:crypto';
+import {
+  createPrivateKey,
+  createPublicKey,
+  createSign,
+  createVerify,
+  generateKeyPairSync,
+} from 'node:crypto';
 
 export type KeyPairOptions = {
-  publicKey: string;
-  privateKey: string;
+  publicKey: Buffer;
+  privateKey: Buffer;
 };
 
 export type VerifySignatureArgs = {
@@ -12,8 +18,8 @@ export type VerifySignatureArgs = {
 };
 
 export class KeyPair {
-  private readonly publicKey: string;
-  private readonly privateKey: string;
+  private readonly publicKey: Buffer;
+  private readonly privateKey: Buffer;
 
   constructor(opts: KeyPairOptions) {
     this.publicKey = opts.publicKey;
@@ -25,7 +31,15 @@ export class KeyPair {
     signer.update(data);
     signer.end();
 
-    return signer.sign(this.getPrivateKey(), 'hex');
+    const der = Buffer.from(this.getPrivateKey(), 'hex');
+
+    const keyObj = createPrivateKey({
+      key: der,
+      format: 'der',
+      type: 'pkcs8',
+    });
+
+    return signer.sign(keyObj, 'hex');
   }
 
   static verifySignature({
@@ -41,15 +55,23 @@ export class KeyPair {
     verifier.update(data);
     verifier.end();
 
-    return verifier.verify(publicKey, signature, 'hex');
+    const der = Buffer.from(publicKey, 'hex');
+
+    const keyObj = createPublicKey({
+      key: der,
+      format: 'der',
+      type: 'spki',
+    });
+
+    return verifier.verify(keyObj, signature, 'hex');
   }
 
   getPublicKey(): string {
-    return this.publicKey;
+    return this.publicKey.toString('hex');
   }
 
   getPrivateKey(): string {
-    return this.privateKey;
+    return this.privateKey.toString('hex');
   }
 
   static generateKeyPair(): KeyPair {
@@ -57,11 +79,11 @@ export class KeyPair {
       namedCurve: 'secp256k1',
       publicKeyEncoding: {
         type: 'spki',
-        format: 'pem',
+        format: 'der',
       },
       privateKeyEncoding: {
         type: 'pkcs8',
-        format: 'pem',
+        format: 'der',
       },
     });
 
