@@ -66,4 +66,42 @@ describe('TransactionPool', () => {
       expect(transactionPool.getValidTransactions()).toEqual(validTransactions);
     });
   });
+
+  describe('clear()', () => {
+    let transactionPool: TransactionPool,
+      wallet: Wallet,
+      amount: number,
+      recipientAddress: string,
+      transaction: Transaction,
+      validTransactions: Transaction[];
+
+    beforeEach(() => {
+      transactionPool = new TransactionPool();
+      wallet = new Wallet();
+      amount = 100;
+      recipientAddress = 'recipientAddress';
+      validTransactions = [];
+
+      for (let i = 0; i < 5; i++) {
+        wallet = new Wallet();
+        transaction = wallet.createTransaction({
+          amount,
+          recipientAddress,
+          transactionPool,
+        });
+
+        if (i % 2) {
+          validTransactions.push(transaction);
+        } else {
+          transaction.input!.amount = 99999;
+        }
+      }
+
+      transactionPool.clear();
+    });
+
+    test('clear all transactions', () => {
+      expect(transactionPool.getTransactions()).toEqual([]);
+    });
+  });
 });
