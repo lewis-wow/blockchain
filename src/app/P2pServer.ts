@@ -81,6 +81,8 @@ export class P2pServer {
     socket.on('message', (message) => {
       const { messageType, data } = Message.parseMessage(message);
 
+      log.debug(messageType);
+
       match(messageType)
         .with(ChainMessage.MESSAGE_TYPE, () => {
           this.handleChain(ChainMessage.create(data));
@@ -88,6 +90,7 @@ export class P2pServer {
         .with(TransactionMessage.MESSAGE_TYPE, () => {
           this.handleTransaction(TransactionMessage.create(data));
         })
+        .with(undefined, () => null)
         .otherwise(() => {
           throw new InvalidMessageType();
         });
