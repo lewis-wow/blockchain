@@ -17,6 +17,7 @@ export type BlockOptions = {
   hash: string;
   data: Serializable;
   nonce: number;
+  difficulty: number;
 };
 
 /**
@@ -31,6 +32,7 @@ export type HashArgs = {
   lastHash: string;
   data: Serializable;
   nonce: number;
+  difficulty: number;
 };
 
 export type SerializedBlock = Merge<
@@ -49,6 +51,7 @@ export class Block {
   hash: string;
   data: Serializable;
   nonce: number;
+  difficulty: number;
 
   /**
    * Creates an instance of Block.
@@ -60,6 +63,7 @@ export class Block {
     this.hash = opts.hash;
     this.data = opts.data;
     this.nonce = opts.nonce;
+    this.difficulty = opts.difficulty;
   }
 
   /**
@@ -73,6 +77,7 @@ export class Block {
       hash: this.hash,
       data: this.data,
       nonce: this.nonce,
+      difficulty: this.difficulty,
     };
   }
 
@@ -83,6 +88,7 @@ export class Block {
       hash: json.hash,
       data: json.data,
       nonce: json.nonce,
+      difficulty: json.difficulty,
     });
   }
 
@@ -111,6 +117,7 @@ export class Block {
       hash: sha256('genesis-hash'),
       data: {},
       nonce: 0,
+      difficulty: Block.DIFFICULTY,
     });
   }
 
@@ -131,6 +138,7 @@ export class Block {
    */
   static mineBlock(lastBlock: Block, data: Serializable): Block {
     const lastHash = lastBlock.hash;
+    let difficulty = lastBlock.difficulty;
 
     let timestamp = new Date();
     let nonce = 0;
@@ -140,19 +148,20 @@ export class Block {
       lastHash,
       data,
       nonce,
+      difficulty,
     });
 
-    while (
-      hash.substring(0, Block.DIFFICULTY) !== '0'.repeat(Block.DIFFICULTY)
-    ) {
-      timestamp = new Date();
+    while (hash.substring(0, difficulty) !== '0'.repeat(difficulty)) {
       nonce++;
+      timestamp = new Date();
+      difficulty = Block.adjustDifficulty(lastBlock, timestamp);
 
       hash = Block.hash({
         timestamp,
         lastHash,
         data,
         nonce,
+        difficulty,
       });
     }
 
@@ -162,14 +171,44 @@ export class Block {
       hash,
       data,
       nonce,
+      difficulty,
     });
   }
 
   static blockHash(block: Block): string {
-    const { timestamp, lastHash, data, nonce } = block;
+    const { timestamp, lastHash, data, nonce, difficulty } = block;
 
-    return Block.hash({ timestamp, lastHash, data, nonce });
+    return Block.hash({ timestamp, lastHash, data, nonce, difficulty });
   }
 
-  static readonly DIFFICULTY = 6;
+  /**
+   * Adjusts the mining difficulty based on the time taken to mine the last block.
+   *
+   * This function ensures that blocks are mined at a consistent rate, defined by `Block.MINE_RATE`,
+   * regardless of the number of miners in the network. If the last block was mined too quickly,
+   * the difficulty is increased. If it was mined too slowly, the difficulty is decreased.
+   *
+   * @param {Block} lastBlock - The last mined block.
+   * @param {Date} currentTime - The current timestamp when a new block is being mined.
+   * @returns {number} The adjusted difficulty for the new block.
+   */
+  static adjustDifficulty(lastBlock: Block, currentTime: Date): number {
+    const { difficulty, timestamp } = lastBlock;
+
+    if (timestamp.getTime() + Block.MINE_RATE > currentTime.getTime()) {
+      return difficulty + 1;
+    }
+
+    return difficulty - 1;
+  }
+
+  /**
+   * Initial genesis block difficulty
+   */
+  static readonly DIFFICULTY = 3;
+
+  /**
+   * Mine rate for adjusting dynamic difficulty for new block
+   */
+  static readonly MINE_RATE = 3000; // ms
 }
