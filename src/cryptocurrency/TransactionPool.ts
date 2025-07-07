@@ -3,6 +3,10 @@ import { Transaction } from './Transaction.js';
 export class TransactionPool {
   private transactions: Transaction[] = [];
 
+  getTransactions(): Transaction[] {
+    return this.transactions;
+  }
+
   updateOrAddTransaction(transaction: Transaction): void {
     const transactionWithIdIndex = this.transactions.findIndex(
       (t) => t.id === transaction.id,

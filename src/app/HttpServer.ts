@@ -6,6 +6,8 @@ import z from 'zod';
 import { serve } from '@hono/node-server';
 import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
 import { P2pServer } from './P2pServer.js';
+import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
+import { Wallet } from '../cryptocurrency/Wallet.js';
 
 const SERVICE_NAME = 'http-server';
 
@@ -14,6 +16,8 @@ const log = defaultLog.child({ serviceName: SERVICE_NAME });
 export type HttpServerOptions = {
   blockChain: BlockChain;
   p2pServer: P2pServer;
+  transactionPool: TransactionPool;
+  wallet: Wallet;
 };
 
 export type ListenArgs = {
@@ -22,12 +26,17 @@ export type ListenArgs = {
 
 export class HttpServer {
   private blockChain: BlockChain;
-  private app: Hono;
+  private transactionPool: TransactionPool;
+  private wallet: Wallet;
+  private p2pServer: P2pServer;
+
+  private app = new Hono();
 
   constructor(opts: HttpServerOptions) {
     this.blockChain = opts.blockChain;
-    const p2pServer = opts.p2pServer;
-    this.app = new Hono();
+    this.transactionPool = opts.transactionPool;
+    this.wallet = opts.wallet;
+    this.p2pServer = opts.p2pServer;
 
     this.app.get('/blocks', (c) => {
       return c.json(this.blockChain.getChain());
@@ -40,9 +49,39 @@ export class HttpServer {
         const data = c.req.valid('json');
 
         const newBlock = this.blockChain.addBlock(data);
-        p2pServer.syncChains();
+        this.p2pServer.syncChains();
 
         return c.json(newBlock.toJSON());
+      },
+    );
+
+    this.app.get('/transactions', (c) => {
+      return c.json(
+        this.transactionPool
+          .getTransactions()
+          .map((transaction) => transaction.toJSON()),
+      );
+    });
+
+    this.app.post(
+      '/transaction',
+      zValidator(
+        'json',
+        z.object({
+          amount: z.number().min(0),
+          recipient: z.string(),
+        }),
+      ),
+      (c) => {
+        const { amount, recipient } = c.req.valid('json');
+
+        const transaction = this.wallet.createTransaction({
+          amount,
+          recipientAddress: recipient,
+          transactionPool: this.transactionPool,
+        });
+
+        return c.json(transaction.toJSON());
       },
     );
   }

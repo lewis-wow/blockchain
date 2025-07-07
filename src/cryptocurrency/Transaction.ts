@@ -57,6 +57,14 @@ export class Transaction {
     return this;
   }
 
+  toJSON(): Record<string, unknown> {
+    return {
+      id: this.id,
+      input: this.input,
+      outputs: this.outputs,
+    };
+  }
+
   static createTransaction({
     senderWallet,
     recipientAddress,
