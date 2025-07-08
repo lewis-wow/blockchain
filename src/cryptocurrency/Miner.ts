@@ -1,9 +1,9 @@
 import { Block } from '../blockchain/Block.js';
 import { BlockChain } from '../blockchain/BlockChain.js';
-import { Transaction } from '../cryptocurrency/Transaction.js';
-import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
-import { Wallet } from '../cryptocurrency/Wallet.js';
-import { P2pServer } from './P2pServer.js';
+import { Transaction } from './Transaction.js';
+import { TransactionPool } from './TransactionPool.js';
+import { Wallet } from './Wallet.js';
+import { P2pServer } from '../app/P2pServer.js';
 
 export type MinerOptions = {
   blockChain: BlockChain;
@@ -60,6 +60,4 @@ export class Miner {
 
     return block;
   }
-
-  static readonly MINING_REWARD = 50;
 }

@@ -2,6 +2,7 @@ import { renderString } from 'prettyjson';
 import { sha256 } from '../utils/sha256.js';
 import { JSONData, JSONObject } from '../types.js';
 import { Serializable } from '../utils/Serializable.js';
+import { BLOCK_DIFFICULTY, BLOCK_MINE_RATE } from '../config.js';
 
 /**
  * Options required to construct a Block.
@@ -114,7 +115,7 @@ export class Block extends Serializable {
         transactions: [],
       },
       nonce: 0,
-      difficulty: Block.DIFFICULTY,
+      difficulty: BLOCK_DIFFICULTY,
     });
   }
 
@@ -181,7 +182,7 @@ export class Block extends Serializable {
   /**
    * Adjusts the mining difficulty based on the time taken to mine the last block.
    *
-   * This function ensures that blocks are mined at a consistent rate, defined by `Block.MINE_RATE`,
+   * This function ensures that blocks are mined at a consistent rate, defined by `BLOCK_MINE_RATE`,
    * regardless of the number of miners in the network. If the last block was mined too quickly,
    * the difficulty is increased. If it was mined too slowly, the difficulty is decreased.
    *
@@ -192,20 +193,10 @@ export class Block extends Serializable {
   static adjustDifficulty(lastBlock: Block, currentTime: Date): number {
     const { difficulty, timestamp } = lastBlock;
 
-    if (timestamp.getTime() + Block.MINE_RATE > currentTime.getTime()) {
+    if (timestamp.getTime() + BLOCK_MINE_RATE > currentTime.getTime()) {
       return difficulty + 1;
     }
 
     return difficulty - 1;
   }
-
-  /**
-   * Initial genesis block difficulty
-   */
-  static readonly DIFFICULTY = 3;
-
-  /**
-   * Mine rate for adjusting dynamic difficulty for new block
-   */
-  static readonly MINE_RATE = 3000; // ms
 }

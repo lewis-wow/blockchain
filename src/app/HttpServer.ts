@@ -8,7 +8,7 @@ import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
 import { P2pServer } from './P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
-import { Miner } from './Miner.js';
+import { Miner } from '../cryptocurrency/Miner.js';
 
 const SERVICE_NAME = 'http-server';
 

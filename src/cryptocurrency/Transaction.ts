@@ -4,8 +4,8 @@ import { sha256 } from '../utils/sha256.js';
 import { KeyPair } from './KeyPair.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Serializable } from '../utils/Serializable.js';
-import { Miner } from '../app/Miner.js';
 import { JSONObject } from '../types.js';
+import { MINER_MINING_REWARD } from '../config.js';
 
 export type TransactionInput = {
   timestamp: Date;
@@ -80,7 +80,7 @@ export class Transaction extends Serializable {
   static _transactionWithOutputs(
     senderWallet: Wallet,
     outputs: TransactionOutput[],
-  ) {
+  ): Transaction {
     const transaction = new Transaction();
     transaction.outputs.push(...outputs);
     Transaction.signTransaction(transaction, senderWallet);
@@ -114,7 +114,7 @@ export class Transaction extends Serializable {
   ): Transaction {
     return Transaction._transactionWithOutputs(blockChainWallet, [
       {
-        amount: Miner.MINING_REWARD,
+        amount: MINER_MINING_REWARD,
         address: minerWallet.publicKey,
       },
     ]);

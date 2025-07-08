@@ -5,6 +5,7 @@ import {
   createVerify,
   generateKeyPairSync,
 } from 'node:crypto';
+import { KEY_PAIR_SIGN_ALGORITHM } from '../config.js';
 
 export type KeyPairOptions = {
   publicKey: Buffer;
@@ -27,7 +28,7 @@ export class KeyPair {
   }
 
   sign(data: string): string {
-    const signer = createSign(KeyPair.SIGN_ALGORITHM);
+    const signer = createSign(KEY_PAIR_SIGN_ALGORITHM);
     signer.update(data);
     signer.end();
 
@@ -51,7 +52,7 @@ export class KeyPair {
     data: string;
     signature: string;
   }): boolean {
-    const verifier = createVerify(KeyPair.SIGN_ALGORITHM);
+    const verifier = createVerify(KEY_PAIR_SIGN_ALGORITHM);
     verifier.update(data);
     verifier.end();
 
@@ -89,6 +90,4 @@ export class KeyPair {
 
     return new KeyPair({ publicKey, privateKey });
   }
-
-  static readonly SIGN_ALGORITHM = 'SHA256';
 }

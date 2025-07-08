@@ -5,6 +5,7 @@ import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Transaction } from './Transaction.js';
 import { BlockChain } from '../blockchain/BlockChain.js';
 import { JSONArray, JSONObject } from '../types.js';
+import { WALLET_INITIAL_BALANCE } from '../config.js';
 
 export type CreateTransactionArgs = {
   amount: number;
@@ -19,7 +20,7 @@ export class Wallet {
   publicKey: string;
 
   constructor() {
-    this.balance = Wallet.INITIAL_BALANCE;
+    this.balance = WALLET_INITIAL_BALANCE;
     this.keyPair = KeyPair.generateKeyPair();
     this.publicKey = this.keyPair.getPublicKey();
   }
@@ -123,8 +124,6 @@ export class Wallet {
 
     return balance;
   }
-
-  static readonly INITIAL_BALANCE = 500;
 
   static createBlockchainWallet(): Wallet {
     const wallet = new Wallet();

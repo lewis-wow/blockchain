@@ -6,7 +6,7 @@ import { HttpServer } from './HttpServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { HttpBootstrapServer } from './HttpBootstrapServer.js';
-import { Miner } from './Miner.js';
+import { Miner } from '../cryptocurrency/Miner.js';
 
 yargs(hideBin(process.argv))
   .command(

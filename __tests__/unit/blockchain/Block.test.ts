@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { Block } from '../../../src/blockchain/Block.js';
+import { BLOCK_DIFFICULTY, BLOCK_MINE_RATE } from '../../../src/config.js';
 
 describe('Block', () => {
   let data: string, lastBlock: Block, block: Block;
@@ -28,17 +29,17 @@ describe('Block', () => {
     expect(
       Block.adjustDifficulty(
         lastBlock,
-        new Date(lastBlock.timestamp.getTime() + Block.MINE_RATE + 1),
+        new Date(lastBlock.timestamp.getTime() + BLOCK_MINE_RATE + 1),
       ),
-    ).toEqual(Block.DIFFICULTY - 1);
+    ).toEqual(BLOCK_DIFFICULTY - 1);
   });
 
   test('adjustDifficulty() increase the difficulty for slowly mined block', () => {
     expect(
       Block.adjustDifficulty(
         lastBlock,
-        new Date(lastBlock.timestamp.getTime() + Block.MINE_RATE - 1),
+        new Date(lastBlock.timestamp.getTime() + BLOCK_MINE_RATE - 1),
       ),
-    ).toEqual(Block.DIFFICULTY + 1);
+    ).toEqual(BLOCK_DIFFICULTY + 1);
   });
 });

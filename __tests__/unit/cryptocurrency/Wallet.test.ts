@@ -3,6 +3,7 @@ import { Wallet } from '../../../src/cryptocurrency/Wallet.js';
 import { TransactionPool } from '../../../src/cryptocurrency/TransactionPool.js';
 import { Transaction } from '../../../src/cryptocurrency/Transaction.js';
 import { BlockChain } from '../../../src/blockchain/BlockChain.js';
+import { WALLET_INITIAL_BALANCE } from '../../../src/config.js';
 
 describe('Wallet', () => {
   let wallet: Wallet;
@@ -12,7 +13,7 @@ describe('Wallet', () => {
   });
 
   test('`balance` match `Wallet.INITIAL_BALANCE`', () => {
-    expect(wallet.balance).toEqual(Wallet.INITIAL_BALANCE);
+    expect(wallet.balance).toEqual(WALLET_INITIAL_BALANCE);
   });
 
   describe('createTransaction()', () => {

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { Transaction } from '../../../src/cryptocurrency/Transaction.js';
 import { Wallet } from '../../../src/cryptocurrency/Wallet.js';
-import { Miner } from '../../../src/app/Miner.js';
+import { MINER_MINING_REWARD } from '../../../src/config.js';
 
 describe('Transaction', () => {
   let senderWallet: Wallet, recipientWallet: Wallet;
@@ -143,7 +143,7 @@ describe('Transaction', () => {
         transaction.outputs.find(
           (output) => output.address === minerWallet.publicKey,
         )?.amount,
-      ).toBe(Miner.MINING_REWARD);
+      ).toBe(MINER_MINING_REWARD);
     });
   });
 });
