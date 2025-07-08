@@ -1,4 +1,8 @@
-import { WebSocketServer, WebSocket, RawData } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
+import { Message, MessagePayload } from '../messages/Message.js';
+import { match } from 'ts-pattern';
+import { PingMessage } from '../messages/PingMessage.js';
+import { PongMessage } from '../messages/PongMessage.js';
 
 export class WebSocketHandler {
   private server?: WebSocketServer;
@@ -18,12 +22,31 @@ export class WebSocketHandler {
     this.handleMessage(socket);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected messageHandler(_message: RawData): void {}
+  // @ts-expect-error - unused destructured properties
+  protected messageHandler({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    messageType,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    data,
+  }: MessagePayload): void {}
 
   private handleMessage(socket: WebSocket): void {
-    socket.on('message', (message) => this.messageHandler(message));
+    socket.on('message', (message) => {
+      const { messageType, data } = Message.parse(message);
+
+      match(messageType)
+        .with(undefined, null, () => {})
+        .with(PingMessage.MESSAGE_TYPE, () => this.handlePing())
+        .with(PongMessage.MESSAGE_TYPE, () => this.handlePong())
+        .otherwise((messageType) => {
+          this.messageHandler({ messageType, data });
+        });
+    });
   }
+
+  private handlePing(): void {}
+
+  private handlePong(): void {}
 
   protected broadcastMessage(
     broadcastMessageHandler: (socket: WebSocket) => void,

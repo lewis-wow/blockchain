@@ -7,6 +7,8 @@ import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { HttpBootstrapServer } from './HttpBootstrapServer.js';
 import { Miner } from '../cryptocurrency/Miner.js';
+import { DhtServer } from './DhtServer.js';
+import { WebSocketServer } from './WebSocketServer.js';
 
 yargs(hideBin(process.argv))
   .command(
@@ -45,6 +47,10 @@ yargs(hideBin(process.argv))
         peers,
       });
 
+      const dhtServer = new DhtServer({
+        port: wsport,
+      });
+
       const miner = new Miner({
         blockChain,
         p2pServer,
@@ -52,7 +58,11 @@ yargs(hideBin(process.argv))
         transactionPool,
       });
 
-      p2pServer.listen({ port: wsport });
+      const webSocketServer = new WebSocketServer({
+        p2pServer,
+        dhtServer,
+      });
+      webSocketServer.listen({ port: wsport });
 
       const httpServer = new HttpServer({
         blockChain,
@@ -61,7 +71,6 @@ yargs(hideBin(process.argv))
         transactionPool,
         miner,
       });
-
       httpServer.listen({ port });
     },
   )

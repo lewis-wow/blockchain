@@ -1,25 +1,24 @@
 import { RawData } from 'ws';
-import { JSONData } from '../types.js';
-import { MethodNotImplemented } from '../exceptions/MethodNotImplemented.js';
+import { JSONData, Nullable } from '../types.js';
 
 export type MessagePayload = {
-  messageType?: string | null;
+  messageType: string;
   data: JSONData;
 };
 
 export class Message {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static fromJSON(_data: JSONData): unknown {
-    throw new MethodNotImplemented();
+    return undefined;
   }
 
-  static parse(data: string | RawData): MessagePayload {
+  static parse(data: string | RawData): Nullable<MessagePayload> {
     return JSON.parse(data.toString());
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static toJSON(_data: unknown): JSONData {
-    throw new MethodNotImplemented();
+    return undefined;
   }
 
   static stringify(data: unknown): string {

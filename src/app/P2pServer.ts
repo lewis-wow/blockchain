@@ -1,16 +1,15 @@
 import { BlockChain } from '../blockchain/BlockChain.js';
-import { WebSocketServer, WebSocket, RawData } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { log as defaultLog } from '../utils/logger.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
 import { ChainMessage } from '../messages/ChainMessage.js';
 import { TransactionMessage } from '../messages/TransactionMessage.js';
-import { Message } from '../messages/Message.js';
+import { MessagePayload } from '../messages/Message.js';
 import { match } from 'ts-pattern';
 import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
 import { ClearTransactionsMessage } from '../messages/ClearTransactionsMessage.js';
 import { JSONObject } from '../types.js';
-import { HOSTNAME, P2P_SERVER_PROTOCOL } from '../config.js';
 import { WebSocketHandler } from '../utils/WebSocketHandler.js';
 
 const SERVICE_NAME = 'peer-to-peer-server';
@@ -39,19 +38,8 @@ export class P2pServer extends WebSocketHandler {
     this.peers = opts.peers;
   }
 
-  listen({ port }: ListenArgs): WebSocketServer {
-    const server = new WebSocketServer({
-      port,
-      host: HOSTNAME,
-    });
-
-    server.on('listening', () => {
-      log.info(
-        `Peer-to-peer server running on ${P2P_SERVER_PROTOCOL}://${HOSTNAME}:${port}`,
-      );
-    });
-
-    this.attachServer(server);
+  public override attachServer(server: WebSocketServer): WebSocketServer {
+    super.attachServer(server);
     this.connectToPeers();
 
     return server;
@@ -74,11 +62,11 @@ export class P2pServer extends WebSocketHandler {
     this.sendChain(socket);
   }
 
-  protected override messageHandler(message: RawData): void {
-    const { messageType, data } = Message.parse(message);
-
+  protected override messageHandler({
+    messageType,
+    data,
+  }: MessagePayload): void {
     match(messageType)
-      .with(undefined, null, () => {})
       .with(ChainMessage.MESSAGE_TYPE, () => {
         this.handleChain(ChainMessage.fromJSON(data as JSONObject[]));
       })
