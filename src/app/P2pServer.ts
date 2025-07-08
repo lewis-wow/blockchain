@@ -5,12 +5,14 @@ import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
 import { ChainMessage } from '../messages/ChainMessage.js';
 import { TransactionMessage } from '../messages/TransactionMessage.js';
-import { MessagePayload } from '../messages/Message.js';
 import { match } from 'ts-pattern';
 import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
 import { ClearTransactionsMessage } from '../messages/ClearTransactionsMessage.js';
-import { JSONObject } from '../types.js';
 import { WebSocketHandler } from '../utils/WebSocketHandler.js';
+import { Contract } from '../contracts/Contract.js';
+import { syncChainsContract } from '../contracts/syncChainsContract.js';
+import { transactionContract } from '../contracts/transactionContract.js';
+import { clearTransactionsContract } from '../contracts/clearTransactionsContract.js';
 
 const SERVICE_NAME = 'peer-to-peer-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -62,19 +64,18 @@ export class P2pServer extends WebSocketHandler {
     this.sendChain(socket);
   }
 
-  protected override messageHandler({
-    messageType,
-    data,
-  }: MessagePayload): void {
-    match(messageType)
-      .with(ChainMessage.MESSAGE_TYPE, () => {
-        this.handleChain(ChainMessage.fromJSON(data as JSONObject[]));
+  protected override messageHandler(
+    payload: typeof Contract.$BASE_ENVELOP,
+  ): void {
+    match(payload)
+      .when(syncChainsContract.is, ({ data }) => {
+        this.handleChain(BlockChain.fromJSON(data));
       })
-      .with(TransactionMessage.MESSAGE_TYPE, () => {
-        this.handleTransaction(TransactionMessage.fromJSON(data as JSONObject));
+      .when(transactionContract.is, ({ data }) => {
+        this.handleTransaction(TransactionMessage.fromJSON(data));
       })
-      .with(ClearTransactionsMessage.MESSAGE_TYPE, () => {
-        this.handleClearTransactions(ClearTransactionsMessage.fromJSON());
+      .when(clearTransactionsContract.is, () => {
+        this.handleClearTransactions();
       })
       .otherwise(() => {
         throw new InvalidMessageType();
@@ -111,8 +112,7 @@ export class P2pServer extends WebSocketHandler {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private handleClearTransactions(_?: undefined): void {
+  private handleClearTransactions(): void {
     log.debug('handleClearTransactions()');
 
     this.transactionPool.clear();
