@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "tsx src/app/index.ts",
+    "dev:watch": "tsx watch src/app/index.ts",
     "start": "node build/src/app/index.js",
     "clean": "rimraf coverage build tmp",
     "prebuild": "npm run lint",
