@@ -3,7 +3,7 @@ import { log as defaultLog } from '../utils/logger.js';
 import { zValidator } from '@hono/zod-validator';
 import z from 'zod';
 import { serve } from '@hono/node-server';
-import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
+import { BOOTSTRAP_SERVER_PROTOCOL, HOSTNAME } from '../config.js';
 
 const SERVICE_NAME = 'bootstrap-server';
 
@@ -44,12 +44,13 @@ export class HttpBootstrapServer {
     serve(
       {
         fetch: this.app.fetch,
+        hostname: HOSTNAME,
         port,
       },
-      (addressInfo) => {
-        const serverAddressInfo = ServerAddressInfo.parse(addressInfo, 'http');
-
-        log.info(`Bootstrap server running on ${serverAddressInfo.toString()}`);
+      () => {
+        log.info(
+          `Bootstrap server running on ${BOOTSTRAP_SERVER_PROTOCOL}://${HOSTNAME}:${port}`,
+        );
       },
     );
   }

@@ -1,7 +1,6 @@
 import { BlockChain } from '../blockchain/BlockChain.js';
 import { WebSocketServer, WebSocket } from 'ws';
 import { log as defaultLog } from '../utils/logger.js';
-import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
 import { ChainMessage } from '../messages/ChainMessage.js';
@@ -11,6 +10,7 @@ import { match } from 'ts-pattern';
 import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
 import { ClearTransactionsMessage } from '../messages/ClearTransactionsMessage.js';
 import { JSONObject } from '../types.js';
+import { HOSTNAME, P2P_SERVER_PROTOCOL } from '../config.js';
 
 const SERVICE_NAME = 'peer-to-peer-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -40,12 +40,13 @@ export class P2pServer {
   listen({ port }: ListenArgs): WebSocketServer {
     const server = new WebSocketServer({
       port,
+      host: HOSTNAME,
     });
 
     server.on('listening', () => {
-      const serverAddressInfo = ServerAddressInfo.parse(server.address(), 'ws');
-
-      log.info(`Server running on ${serverAddressInfo.toString()}`);
+      log.info(
+        `Peer-to-peer server running on ${P2P_SERVER_PROTOCOL}://${HOSTNAME}:${port}`,
+      );
     });
 
     server.on('connection', (socket) => {

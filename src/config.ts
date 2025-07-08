@@ -1,5 +1,6 @@
 export const HOSTNAME = 'localhost';
 export const HTTP_SERVER_PROTOCOL = 'http';
+export const BOOTSTRAP_SERVER_PROTOCOL = 'http';
 export const P2P_SERVER_PROTOCOL = 'ws';
 
 export const MINER_MINING_REWARD = 50;

@@ -4,11 +4,11 @@ import { zValidator } from '@hono/zod-validator';
 import { BlockChain } from '../blockchain/BlockChain.js';
 import z from 'zod';
 import { serve } from '@hono/node-server';
-import { ServerAddressInfo } from '../utils/ServerAddressInfo.js';
 import { P2pServer } from './P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
+import { HOSTNAME, HTTP_SERVER_PROTOCOL } from '../config.js';
 
 const SERVICE_NAME = 'http-server';
 
@@ -109,12 +109,13 @@ export class HttpServer {
     serve(
       {
         fetch: this.app.fetch,
+        hostname: HOSTNAME,
         port,
       },
-      (addressInfo) => {
-        const serverAddressInfo = ServerAddressInfo.parse(addressInfo, 'http');
-
-        log.info(`Server running on ${serverAddressInfo.toString()}`);
+      () => {
+        log.info(
+          `Server running on ${HTTP_SERVER_PROTOCOL}://${HOSTNAME}:${port}`,
+        );
       },
     );
   }
