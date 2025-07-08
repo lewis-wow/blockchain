@@ -1,5 +1,5 @@
 import { BlockChain } from '../blockchain/BlockChain.js';
-import { WebSocketServer, WebSocket } from 'ws';
+import { WebSocketServer, WebSocket, RawData } from 'ws';
 import { log as defaultLog } from '../utils/logger.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
@@ -11,6 +11,7 @@ import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
 import { ClearTransactionsMessage } from '../messages/ClearTransactionsMessage.js';
 import { JSONObject } from '../types.js';
 import { HOSTNAME, P2P_SERVER_PROTOCOL } from '../config.js';
+import { WebSocketHandler } from '../utils/WebSocketHandler.js';
 
 const SERVICE_NAME = 'peer-to-peer-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -25,13 +26,14 @@ export type ListenArgs = {
   port?: number;
 };
 
-export class P2pServer {
-  private sockets: WebSocket[] = [];
+export class P2pServer extends WebSocketHandler {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
   private peers: string[];
 
   constructor(opts: P2pServerOptions) {
+    super();
+
     this.blockChain = opts.blockChain;
     this.transactionPool = opts.transactionPool;
     this.peers = opts.peers;
@@ -49,12 +51,7 @@ export class P2pServer {
       );
     });
 
-    server.on('connection', (socket) => {
-      this.connectSocket(socket);
-
-      log.info(`Peer connected.`);
-    });
-
+    this.attachServer(server);
     this.connectToPeers();
 
     return server;
@@ -72,35 +69,28 @@ export class P2pServer {
     }
   }
 
-  private connectSocket(socket: WebSocket): void {
-    this.sockets.push(socket);
-
-    this.messageHandler(socket);
-
+  protected override connectSocket(socket: WebSocket): void {
+    super.connectSocket(socket);
     this.sendChain(socket);
   }
 
-  private messageHandler(socket: WebSocket): void {
-    socket.on('message', (message) => {
-      const { messageType, data } = Message.parse(message);
+  protected override messageHandler(message: RawData): void {
+    const { messageType, data } = Message.parse(message);
 
-      match(messageType)
-        .with(undefined, null, () => {})
-        .with(ChainMessage.MESSAGE_TYPE, () => {
-          this.handleChain(ChainMessage.fromJSON(data as JSONObject[]));
-        })
-        .with(TransactionMessage.MESSAGE_TYPE, () => {
-          this.handleTransaction(
-            TransactionMessage.fromJSON(data as JSONObject),
-          );
-        })
-        .with(ClearTransactionsMessage.MESSAGE_TYPE, () => {
-          this.handleClearTransactions(ClearTransactionsMessage.fromJSON());
-        })
-        .otherwise(() => {
-          throw new InvalidMessageType();
-        });
-    });
+    match(messageType)
+      .with(undefined, null, () => {})
+      .with(ChainMessage.MESSAGE_TYPE, () => {
+        this.handleChain(ChainMessage.fromJSON(data as JSONObject[]));
+      })
+      .with(TransactionMessage.MESSAGE_TYPE, () => {
+        this.handleTransaction(TransactionMessage.fromJSON(data as JSONObject));
+      })
+      .with(ClearTransactionsMessage.MESSAGE_TYPE, () => {
+        this.handleClearTransactions(ClearTransactionsMessage.fromJSON());
+      })
+      .otherwise(() => {
+        throw new InvalidMessageType();
+      });
   }
 
   private handleChain(blockChain: BlockChain): void {
@@ -114,9 +104,7 @@ export class P2pServer {
   }
 
   public syncChains(): void {
-    for (const socket of this.sockets) {
-      this.sendChain(socket);
-    }
+    this.broadcastMessage(this.sendChain);
   }
 
   private handleTransaction(transaction: Transaction): void {
@@ -130,9 +118,9 @@ export class P2pServer {
   }
 
   public broadcastTransactions(transaction: Transaction): void {
-    for (const socket of this.sockets) {
-      this.sendTransaction(socket, transaction);
-    }
+    this.broadcastMessage((socket) =>
+      this.sendTransaction(socket, transaction),
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -147,8 +135,6 @@ export class P2pServer {
   }
 
   public broadcastClearTransactions(): void {
-    for (const socket of this.sockets) {
-      this.sendClearTransactions(socket);
-    }
+    this.broadcastMessage(this.sendClearTransactions);
   }
 }
