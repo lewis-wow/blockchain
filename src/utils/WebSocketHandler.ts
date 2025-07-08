@@ -1,8 +1,8 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { Message, MessagePayload } from '../messages/Message.js';
 import { match } from 'ts-pattern';
-import { PingMessage } from '../messages/PingMessage.js';
-import { PongMessage } from '../messages/PongMessage.js';
+import { Contract } from '../contracts/Contract.js';
+import { pingContract } from '../contracts/pingContract.js';
+import { pongContract } from '../contracts/pongContract.js';
 
 export class WebSocketHandler {
   private server?: WebSocketServer;
@@ -22,24 +22,22 @@ export class WebSocketHandler {
     this.handleMessage(socket);
   }
 
-  // @ts-expect-error - unused destructured properties
-  protected messageHandler({
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    messageType,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    data,
-  }: MessagePayload): void {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  protected messageHandler(_args: { type: string; data?: any }): void {}
 
   private handleMessage(socket: WebSocket): void {
     socket.on('message', (message) => {
-      const { messageType, data } = Message.parse(message);
+      const payload = Contract.parse(message);
 
-      match(messageType)
-        .with(undefined, null, () => {})
-        .with(PingMessage.MESSAGE_TYPE, () => this.handlePing())
-        .with(PongMessage.MESSAGE_TYPE, () => this.handlePong())
-        .otherwise((messageType) => {
-          this.messageHandler({ messageType, data });
+      if (payload.success === false) {
+        return;
+      }
+
+      match(payload.data)
+        .when(pingContract.is, () => this.handlePing())
+        .when(pongContract.is, () => this.handlePong())
+        .otherwise((payloadData) => {
+          this.messageHandler(payloadData);
         });
     });
   }
