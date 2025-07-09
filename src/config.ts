@@ -13,3 +13,5 @@ export const WALLET_INITIAL_BALANCE = 500;
 export const BLOCK_DIFFICULTY = 3;
 // Mine rate for adjusting dynamic difficulty for new block
 export const BLOCK_MINE_RATE = 3000; // ms
+
+export const LOG_LEVEL = 'debug';

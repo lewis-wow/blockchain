@@ -65,6 +65,7 @@ export abstract class WebSocketServer extends Server {
 
   private _handleMessage(socket: WebSocket): void {
     socket.on('message', (message) => {
+      console.log(message.toString());
       const parsedMessage = Contract.parse(message);
 
       if (parsedMessage.success === false) {
@@ -74,8 +75,14 @@ export abstract class WebSocketServer extends Server {
       const payload = parsedMessage.data;
 
       match(payload)
-        .when(pingContract.is, () => this.handlePing())
-        .when(pongContract.is, () => this.handlePong())
+        .when(
+          (shape) => pingContract.is(shape),
+          () => this.handlePing(),
+        )
+        .when(
+          (shape) => pongContract.is(shape),
+          () => this.handlePong(),
+        )
         .otherwise(() =>
           this.handleMessage({
             payload,
@@ -122,7 +129,7 @@ export abstract class WebSocketServer extends Server {
     }
 
     socket.on('open', () => {
-      this.sendMessage(socket, data);
+      socket.send(data);
     });
   }
 }

@@ -44,17 +44,34 @@ export class DhtServer extends WebSocketServer {
 
   override handleMessage({ payload, socket }: HandleMessageArgs): void {
     match(payload)
-      .when(dhtStoreContract.is, ({ data }) => this.handleStore(data))
-      .when(dhtFindValueContract.is, ({ data }) =>
-        this.handleFindValue({ ...data, socket }),
+      .when(
+        (shape) => dhtStoreContract.is(shape),
+        ({ data }) => this.handleStore(data),
       )
-      .when(dhtFindNodeContract.is, ({ data }) =>
-        this.handleFindNode({
-          ...data,
-          socket,
-        }),
+      .when(
+        (shape) => dhtFindValueContract.is(shape),
+        ({ data }) => this.handleFindValue({ ...data, socket }),
       )
-      .when(dhtHelloContract.is, ({ data }) => this.handleHello(data))
+      .when(
+        (shape) => dhtFindNodeContract.is(shape),
+        ({ data }) =>
+          this.handleFindNode({
+            ...data,
+            socket,
+          }),
+      )
+      .when(
+        (shape) => dhtHelloContract.is(shape),
+        ({ data }) => this.handleHello(data),
+      )
+      .when(
+        (shape) => dhtNodesContract.is(shape),
+        ({ data }) => this.handleNodes(data),
+      )
+      .when(
+        (shape) => dhtValueContract.is(shape),
+        ({ data }) => this.handleValue(data),
+      )
       .otherwise(() => {
         throw new InvalidMessageType();
       });
@@ -113,10 +130,12 @@ export class DhtServer extends WebSocketServer {
   }
 
   private handleStore(msg: { key: string; value: JSONData }): void {
+    log.debug('handleStore()');
     this.store.set(msg.key, msg.value);
   }
 
   private handleFindValue(msg: { key: string; socket: WebSocket }): void {
+    log.debug('handleFindValue()');
     const value = this.store.get(msg.key);
     this.sendMessage(
       msg.socket,
@@ -124,12 +143,24 @@ export class DhtServer extends WebSocketServer {
     );
   }
 
+  private handleValue(msg: { key: string; value: JSONData }): void {
+    log.debug('handleValue()');
+    console.log(msg);
+  }
+
   private handleFindNode(msg: { id: string; socket: WebSocket }): void {
+    log.debug('handleFindNode()');
     const nodes = this.findClosestNodes(msg.id);
     this.sendMessage(msg.socket, dhtNodesContract.stringify({ nodes }));
   }
 
+  private handleNodes(msg: { nodes: { id: string; address: string }[] }): void {
+    log.debug('handleNodes()');
+    console.log(msg);
+  }
+
   private handleHello(msg: { id: string; address: string }): void {
+    log.debug('handleHello()');
     this.routingTable.set(msg.id, msg.address);
   }
 }

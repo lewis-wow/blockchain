@@ -48,10 +48,7 @@ yargs(hideBin(process.argv))
         port: dhtPort,
       });
       dhtServer.listen();
-
-      setTimeout(() => {
-        dhtServer.join(bootstrap);
-      }, 1000);
+      dhtServer.join(bootstrap);
 
       const miner = new Miner({
         blockChain,

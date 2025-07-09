@@ -55,15 +55,24 @@ export class P2pServer extends WebSocketServer {
 
   override handleMessage({ payload }: HandleMessageArgs): void {
     match(payload)
-      .when(p2pSyncChainsContract.is, ({ data }) => {
-        this.handleChain(p2pSyncChainsContract.parse(data));
-      })
-      .when(p2pTransactionContract.is, ({ data }) => {
-        this.handleTransaction(p2pTransactionContract.parse(data));
-      })
-      .when(p2pClearTransactionsContract.is, () => {
-        this.handleClearTransactions();
-      })
+      .when(
+        (shape) => p2pSyncChainsContract.is(shape),
+        ({ data }) => {
+          this.handleChain(p2pSyncChainsContract.parse(data));
+        },
+      )
+      .when(
+        (shape) => p2pTransactionContract.is(shape),
+        ({ data }) => {
+          this.handleTransaction(p2pTransactionContract.parse(data));
+        },
+      )
+      .when(
+        (shape) => p2pClearTransactionsContract.is(shape),
+        () => {
+          this.handleClearTransactions();
+        },
+      )
       .otherwise(() => {
         throw new InvalidMessageType();
       });

@@ -2,11 +2,18 @@ import { z } from 'zod';
 import { JSONData } from '../types.js';
 import { RawData } from 'ws';
 
-export type ContractOptions<T, S extends JSONData, TType extends string> = {
+export type ContractOptions<TType extends string, T, S extends JSONData> = {
   parse?: (data: S) => T;
   serialize?: (data: T) => S;
   type: TType;
 };
+
+export type ContractMessage<TType extends string, S extends JSONData> = {
+  type: TType;
+  data: S;
+};
+
+export type AnyContractMessage = ContractMessage<string, JSONData>;
 
 export class Contract<
   TType extends string = string,
@@ -17,7 +24,7 @@ export class Contract<
   private _serialize?: (data: T) => S;
   public type: TType;
 
-  constructor(opts: ContractOptions<T, S, TType>) {
+  constructor(opts: ContractOptions<TType, T, S>) {
     this._parse = opts.parse;
     this._serialize = opts.serialize;
     this.type = opts.type;
@@ -27,17 +34,24 @@ export class Contract<
     return this._parse?.(data) as T;
   }
 
-  serialize(data: T extends undefined ? T | void : T): S {
-    return this._serialize?.(data as T) as S;
+  serialize(
+    data: T extends undefined ? T | void : T,
+  ): ContractMessage<TType, S> {
+    return {
+      type: this.type,
+      data: this._serialize?.(data as T) as S,
+    };
   }
 
   stringify(data: T extends undefined ? T | void : T): string {
     return JSON.stringify(this.serialize(data));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  is(shape: { type: string; data?: any }): shape is { type: TType; data: S } {
-    return shape.type === this.type;
+  is(shape: {
+    type?: string;
+    data?: unknown;
+  }): shape is { type: TType; data: S } {
+    return shape?.type === this.type;
   }
 
   static parse(

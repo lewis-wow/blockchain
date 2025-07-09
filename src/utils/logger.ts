@@ -1,4 +1,5 @@
 import { createLogger, format, transports } from 'winston';
+import { LOG_LEVEL } from '../config.js';
 
 const { combine, printf, colorize } = format;
 
@@ -9,7 +10,7 @@ const logFormat = printf(({ level, message, serviceName, ...rest }) => {
 });
 
 export const log = createLogger({
-  level: 'debug',
+  level: LOG_LEVEL,
   format: combine(colorize(), logFormat),
   transports: [new transports.Console()],
 });
