@@ -4,7 +4,7 @@ import { Contract } from '../contracts/Contract.js';
 import { pingContract } from '../contracts/pingContract.js';
 import { pongContract } from '../contracts/pongContract.js';
 
-export class WebSocketHandler {
+export abstract class WebSocketServerHandler {
   private server?: WebSocketServer;
   protected sockets: WebSocket[] = [];
 
@@ -18,14 +18,14 @@ export class WebSocketHandler {
 
   protected connectSocket(socket: WebSocket): void {
     this.sockets.push(socket);
-
-    this.handleMessage(socket);
+    this._handleMessage(socket);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  protected messageHandler(_args: { type: string; data?: any }): void {}
+  protected abstract handleMessage(
+    payload: typeof Contract.$BASE_ENVELOP,
+  ): void;
 
-  private handleMessage(socket: WebSocket): void {
+  private _handleMessage(socket: WebSocket): void {
     socket.on('message', (message) => {
       const payload = Contract.parse(message);
 
@@ -36,9 +36,7 @@ export class WebSocketHandler {
       match(payload.data)
         .when(pingContract.is, () => this.handlePing())
         .when(pongContract.is, () => this.handlePong())
-        .otherwise((payloadData) => {
-          this.messageHandler(payloadData);
-        });
+        .otherwise(this.handleMessage);
     });
   }
 

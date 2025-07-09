@@ -1,20 +1,20 @@
 import { match } from 'ts-pattern';
 import { HOSTNAME } from '../config.js';
 import { sha256 } from '../utils/sha256.js';
-import { WebSocketHandler } from '../utils/WebSocketHandler.js';
-import { MessagePayload } from '../messages/Message.js';
+import { WebSocketServerHandler } from './WebSocketServerHandler.js';
 import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
-import { StoreMessage } from '../messages/StoreMessage.js';
-import { FindValueMessage } from '../messages/FindValueMessage.js';
-import { FindNodeMessage } from '../messages/FindNodeMessage.js';
-import { HelloMessage } from '../messages/HelloMessage.js';
 import { xorDistance } from '../utils/xorDistance.js';
+import { Contract } from '../contracts/Contract.js';
+import { dhtStoreContract } from '../contracts/dhtStoreContract.js';
+import { dhtFindValueContract } from '../contracts/dhtFindValueContract.js';
+import { dhtFindNodeContract } from '../contracts/dhtFindNodeContract.js';
+import { dhtHelloContract } from '../contracts/dhtHelloContract.js';
 
 export type DhtServerOptions = {
   port: number;
 };
 
-export class DhtServer extends WebSocketHandler {
+export class DhtServer extends WebSocketServerHandler {
   private address: string;
   private id: string;
   private store = new Map<string, unknown>();
@@ -29,15 +29,12 @@ export class DhtServer extends WebSocketHandler {
     this.id = sha256(this.address);
   }
 
-  protected override messageHandler({
-    messageType,
-    data,
-  }: MessagePayload): void {
-    match(messageType)
-      .with(StoreMessage.MESSAGE_TYPE, () => this.handleStore())
-      .with(FindValueMessage.MESSAGE_TYPE, () => this.handleFindValue())
-      .with(FindNodeMessage.MESSAGE_TYPE, () => this.handleFindNode())
-      .with(HelloMessage.MESSAGE_TYPE, () => this.handleHello())
+  override handleMessage(payloadData: typeof Contract.$BASE_ENVELOP): void {
+    match(payloadData)
+      .when(dhtStoreContract.is, () => this.handleStore())
+      .when(dhtFindValueContract.is, () => this.handleFindValue())
+      .when(dhtFindNodeContract.is, () => this.handleFindNode())
+      .when(dhtHelloContract.is, () => this.handleHello())
       .otherwise(() => {
         throw new InvalidMessageType();
       });

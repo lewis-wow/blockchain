@@ -27,8 +27,12 @@ export class Contract<
     return this._parse?.(data) as T;
   }
 
-  serialize(data: T): S {
-    return this._serialize?.(data) as S;
+  serialize(data: T extends undefined ? T | void : T): S {
+    return this._serialize?.(data as T) as S;
+  }
+
+  stringify(data: T extends undefined ? T | void : T): string {
+    return JSON.stringify(this.serialize(data));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

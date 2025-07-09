@@ -18,6 +18,7 @@
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictNullChecks": true,
+    "noImplicitOverride": true,
   },
   "include": ["src", "__tests__"]
 }
