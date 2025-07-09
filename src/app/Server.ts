@@ -27,5 +27,5 @@ export abstract class Server {
     return this.address;
   }
 
-  abstract listen(): void;
+  abstract listen(handler?: (server: this) => void): void;
 }

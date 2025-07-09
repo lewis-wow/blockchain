@@ -107,7 +107,7 @@ export class HttpServer extends Server {
     });
   }
 
-  override listen(): void {
+  override listen(handler?: (server: this) => void): void {
     serve(
       {
         fetch: this.app.fetch,
@@ -116,6 +116,7 @@ export class HttpServer extends Server {
       },
       () => {
         log.info(`Server running on ${this.address}`);
+        handler?.(this);
       },
     );
   }

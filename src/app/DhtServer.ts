@@ -30,8 +30,8 @@ export class DhtServer extends WebSocketServer {
     super(opts);
   }
 
-  override listen(): void {
-    super.listen();
+  override listen(handler?: (server: this) => void): void {
+    super.listen(handler);
 
     this.server.on('listening', () => {
       log.info(`DHT server running on ${this.address}`);

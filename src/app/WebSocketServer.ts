@@ -30,14 +30,22 @@ export abstract class WebSocketServer extends Server {
     });
   }
 
+  getServer(): Wss {
+    return this.server;
+  }
+
   getSockets(): WebSocket[] {
     return this.sockets;
   }
 
-  override listen(): void {
+  override listen(handler?: (server: this) => void): void {
     this.server = new Wss({
       port: this.port,
       host: HOSTNAME,
+    });
+
+    this.server.on('listening', () => {
+      handler?.(this);
     });
 
     this.server.on('connection', (socket) => {
@@ -108,6 +116,13 @@ export abstract class WebSocketServer extends Server {
   protected sendMessage(peer: string | WebSocket, data: string): void {
     const socket = typeof peer === 'string' ? new WebSocket(peer) : peer;
 
-    socket.send(data);
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(data);
+      return;
+    }
+
+    socket.on('open', () => {
+      this.sendMessage(socket, data);
+    });
   }
 }

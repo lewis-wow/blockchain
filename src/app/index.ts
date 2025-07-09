@@ -10,17 +10,24 @@ import { DhtServer } from './DhtServer.js';
 
 yargs(hideBin(process.argv))
   .command(
-    'serve <port>',
+    '$0 [port] [bootstrap]',
     'start the server',
     (yargs) => {
-      return yargs.positional('port', {
-        describe: 'port to bind on http server',
-        type: 'number',
-        default: 3000,
-      });
+      return yargs
+        .positional('port', {
+          describe: 'port to bind on http server',
+          type: 'number',
+          default: 3000,
+        })
+        .positional('bootstrap', {
+          describe: 'bootstrap server addresss',
+          type: 'string',
+          default: 'ws://localhost:5001',
+        });
     },
     async (argv) => {
       const port = argv.port;
+      const bootstrap = argv.bootstrap;
       const p2pPort = port + 1000;
       const dhtPort = port + 2000;
       const peers = [];
@@ -41,6 +48,10 @@ yargs(hideBin(process.argv))
         port: dhtPort,
       });
       dhtServer.listen();
+
+      setTimeout(() => {
+        dhtServer.join(bootstrap);
+      }, 1000);
 
       const miner = new Miner({
         blockChain,

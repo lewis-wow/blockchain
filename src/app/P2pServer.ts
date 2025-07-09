@@ -33,8 +33,8 @@ export class P2pServer extends WebSocketServer {
     this.peers = opts.peers;
   }
 
-  override listen(): void {
-    super.listen();
+  override listen(handler?: (server: this) => void): void {
+    super.listen(handler);
     this.connectToPeers();
 
     this.server.on('listening', () => {
