@@ -36,6 +36,10 @@ export class P2pServer extends WebSocketServer {
   override listen(): void {
     super.listen();
     this.connectToPeers();
+
+    this.server.on('listening', () => {
+      log.info(`Peer-to-peer server running on ${this.address}`);
+    });
   }
 
   private connectToPeers(): void {

@@ -20,7 +20,7 @@ export type HandleMessageArgs = {
 };
 
 export abstract class WebSocketServer extends Server {
-  private server: Wss;
+  protected server: Wss;
   private sockets: WebSocket[] = [];
 
   constructor(opts: WebSocketServerOptions) {
@@ -38,10 +38,6 @@ export abstract class WebSocketServer extends Server {
     this.server = new Wss({
       port: this.port,
       host: HOSTNAME,
-    });
-
-    this.server.on('listening', () => {
-      log.info(`Websocket server running on ${this.address}`);
     });
 
     this.server.on('connection', (socket) => {

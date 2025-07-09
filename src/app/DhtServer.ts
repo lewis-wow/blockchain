@@ -11,6 +11,10 @@ import { WebSocket } from 'ws';
 import { JSONData } from '../types.js';
 import { dhtValueContract } from '../contracts/dhtValueContract.js';
 import { dhtNodesContract } from '../contracts/dhtNodesContract.js';
+import { log as defaultLog } from '../utils/logger.js';
+
+const SERVICE_NAME = 'dht-server';
+const log = defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type DhtServerOptions = {
   port: number;
@@ -24,6 +28,14 @@ export class DhtServer extends WebSocketServer {
 
   constructor(opts: DhtServerOptions) {
     super(opts);
+  }
+
+  override listen(): void {
+    super.listen();
+
+    this.server.on('listening', () => {
+      log.info(`DHT server running on ${this.address}`);
+    });
   }
 
   override connectSocket(socket: WebSocket): void {
