@@ -30,6 +30,14 @@ export class DhtServer extends WebSocketServer {
     super(opts);
   }
 
+  get(key: string): JSONData | undefined {
+    return this.store.get(key);
+  }
+
+  getRoutingTable(): Map<string, string> {
+    return this.routingTable;
+  }
+
   override listen(handler?: (server: this) => void): void {
     super.listen(handler);
 
@@ -160,7 +168,7 @@ export class DhtServer extends WebSocketServer {
   }
 
   private handleHello(msg: { id: string; address: string }): void {
-    log.debug('handleHello()');
     this.routingTable.set(msg.id, msg.address);
+    log.debug('handleHello()', this.routingTable);
   }
 }
