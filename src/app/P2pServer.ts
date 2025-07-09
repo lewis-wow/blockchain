@@ -1,17 +1,14 @@
 import { BlockChain } from '../blockchain/BlockChain.js';
-import { WebSocketServer, WebSocket } from 'ws';
+import { WebSocket } from 'ws';
 import { log as defaultLog } from '../utils/logger.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
-import { ChainMessage } from '../messages/ChainMessage.js';
-import { TransactionMessage } from '../messages/TransactionMessage.js';
 import { match } from 'ts-pattern';
 import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
-import { WebSocketServerHandler } from './WebSocketServerHandler.js';
 import { p2pSyncChainsContract } from '../contracts/p2pSyncChainsContract.js';
 import { p2pTransactionContract } from '../contracts/p2ptransactionContract.js';
 import { p2pClearTransactionsContract } from '../contracts/p2pClearTransactionsContract.js';
-import { Contract } from '../contracts/Contract.js';
+import { HandleMessageArgs, WebSocketServer } from './WebSocketServer.js';
 
 const SERVICE_NAME = 'peer-to-peer-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
@@ -20,39 +17,30 @@ export type P2pServerOptions = {
   blockChain: BlockChain;
   transactionPool: TransactionPool;
   peers: string[];
+  port: number;
 };
 
-export type ListenArgs = {
-  port?: number;
-};
-
-export class P2pServer extends WebSocketServerHandler {
+export class P2pServer extends WebSocketServer {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
   private peers: string[];
 
   constructor(opts: P2pServerOptions) {
-    super();
+    super(opts);
 
     this.blockChain = opts.blockChain;
     this.transactionPool = opts.transactionPool;
     this.peers = opts.peers;
   }
 
-  override attachServer(server: WebSocketServer): void {
-    super.attachServer(server);
+  override listen(): void {
+    super.listen();
     this.connectToPeers();
   }
 
   private connectToPeers(): void {
-    for (const peer of this.peers) {
-      const socket = new WebSocket(peer);
-
-      socket.on('open', () => {
-        this.connectSocket(socket);
-
-        log.info(`Connected to peer ${peer}`);
-      });
+    for (const peerAddress of this.peers) {
+      this.connectToPeer(peerAddress);
     }
   }
 
@@ -61,13 +49,13 @@ export class P2pServer extends WebSocketServerHandler {
     this.sendChain(socket);
   }
 
-  override handleMessage(payloadData: typeof Contract.$BASE_ENVELOP): void {
-    match(payloadData)
+  override handleMessage({ payload }: HandleMessageArgs): void {
+    match(payload)
       .when(p2pSyncChainsContract.is, ({ data }) => {
-        this.handleChain(BlockChain.fromJSON(data));
+        this.handleChain(p2pSyncChainsContract.parse(data));
       })
       .when(p2pTransactionContract.is, ({ data }) => {
-        this.handleTransaction(TransactionMessage.fromJSON(data));
+        this.handleTransaction(p2pTransactionContract.parse(data));
       })
       .when(p2pClearTransactionsContract.is, () => {
         this.handleClearTransactions();
@@ -84,7 +72,7 @@ export class P2pServer extends WebSocketServerHandler {
 
   private sendChain(socket: WebSocket): void {
     log.debug('sendChain()');
-    socket.send(ChainMessage.stringify(this.blockChain));
+    this.sendMessage(socket, p2pSyncChainsContract.stringify(this.blockChain));
   }
 
   public syncChains(): void {
@@ -99,7 +87,7 @@ export class P2pServer extends WebSocketServerHandler {
 
   private sendTransaction(socket: WebSocket, transaction: Transaction): void {
     log.debug('sendTransaction()', transaction);
-    socket.send(p2pTransactionContract.stringify(transaction));
+    this.sendMessage(socket, p2pTransactionContract.stringify(transaction));
   }
 
   public broadcastTransactions(transaction: Transaction): void {
@@ -116,7 +104,7 @@ export class P2pServer extends WebSocketServerHandler {
 
   private sendClearTransactions(socket: WebSocket): void {
     log.debug('sendClearTransactions()');
-    socket.send(p2pClearTransactionsContract.stringify());
+    this.sendMessage(socket, p2pClearTransactionsContract.stringify());
   }
 
   public broadcastClearTransactions(): void {

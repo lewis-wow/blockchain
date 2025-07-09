@@ -5,37 +5,25 @@ import { hideBin } from 'yargs/helpers';
 import { HttpServer } from './HttpServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
-import { HttpBootstrapServer } from './HttpBootstrapServer.js';
 import { Miner } from '../cryptocurrency/Miner.js';
 import { DhtServer } from './DhtServer.js';
-import { WebSocketServer } from './WebSocketServer.js';
 
 yargs(hideBin(process.argv))
   .command(
-    'serve <port> <wsport> [peers..]',
+    'serve <port>',
     'start the server',
     (yargs) => {
-      return yargs
-        .positional('port', {
-          describe: 'port to bind on http server',
-          type: 'number',
-          default: 3000,
-        })
-        .positional('wsport', {
-          describe: 'port to bind on peer-to-peer server',
-          type: 'number',
-        })
-        .positional('peers', {
-          describe: 'List of peer addresses',
-          type: 'string',
-          array: true,
-          default: [],
-        });
+      return yargs.positional('port', {
+        describe: 'port to bind on http server',
+        type: 'number',
+        default: 3000,
+      });
     },
     async (argv) => {
-      const port = argv.port ?? 3000;
-      const wsport = argv.wsport ?? port + 2000;
-      const peers = argv.peers;
+      const port = argv.port;
+      const p2pPort = port + 1000;
+      const dhtPort = port + 2000;
+      const peers = [];
 
       const blockChain = new BlockChain();
       const wallet = new Wallet();
@@ -45,11 +33,14 @@ yargs(hideBin(process.argv))
         blockChain,
         transactionPool,
         peers,
+        port: p2pPort,
       });
+      p2pServer.listen();
 
       const dhtServer = new DhtServer({
-        port: wsport,
+        port: dhtPort,
       });
+      dhtServer.listen();
 
       const miner = new Miner({
         blockChain,
@@ -58,38 +49,15 @@ yargs(hideBin(process.argv))
         transactionPool,
       });
 
-      const webSocketServer = new WebSocketServer({
-        p2pServer,
-        dhtServer,
-      });
-      webSocketServer.listen({ port: wsport });
-
       const httpServer = new HttpServer({
         blockChain,
         p2pServer,
         wallet,
         transactionPool,
         miner,
+        port,
       });
-      httpServer.listen({ port });
-    },
-  )
-  .command(
-    'bootstrap <port>',
-    'start the bootstrap server',
-    (yargs) => {
-      return yargs.positional('port', {
-        describe: 'port to bind on http bootstrap server',
-        type: 'number',
-        default: 4000,
-      });
-    },
-    (argv) => {
-      const port = argv.port;
-
-      const httpBootstrapServer = new HttpBootstrapServer();
-
-      httpBootstrapServer.listen({ port });
+      httpServer.listen();
     },
   )
   .help()

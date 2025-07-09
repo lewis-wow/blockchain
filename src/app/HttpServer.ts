@@ -8,7 +8,8 @@ import { P2pServer } from './P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
-import { HOSTNAME, HTTP_SERVER_PROTOCOL } from '../config.js';
+import { HOSTNAME } from '../config.js';
+import { Server } from './Server.js';
 
 const SERVICE_NAME = 'http-server';
 
@@ -20,22 +21,23 @@ export type HttpServerOptions = {
   transactionPool: TransactionPool;
   wallet: Wallet;
   miner: Miner;
+  port: number;
 };
 
-export type ListenArgs = {
-  port?: number;
-};
-
-export class HttpServer {
+export class HttpServer extends Server {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
   private wallet: Wallet;
   private p2pServer: P2pServer;
   private miner: Miner;
-
   private app = new Hono();
 
   constructor(opts: HttpServerOptions) {
+    super({
+      ...opts,
+      protocol: 'http',
+    });
+
     this.blockChain = opts.blockChain;
     this.transactionPool = opts.transactionPool;
     this.wallet = opts.wallet;
@@ -105,17 +107,15 @@ export class HttpServer {
     });
   }
 
-  listen({ port }: ListenArgs): void {
+  override listen(): void {
     serve(
       {
         fetch: this.app.fetch,
         hostname: HOSTNAME,
-        port,
+        port: this.port,
       },
       () => {
-        log.info(
-          `Server running on ${HTTP_SERVER_PROTOCOL}://${HOSTNAME}:${port}`,
-        );
+        log.info(`Server running on ${this.address}`);
       },
     );
   }

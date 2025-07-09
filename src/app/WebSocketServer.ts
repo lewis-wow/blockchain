@@ -1,43 +1,117 @@
-import { WebSocketServer as Wss } from 'ws';
+import { WebSocketServer as Wss, WebSocket } from 'ws';
 import { log as defaultLog } from '../utils/logger.js';
 import { HOSTNAME } from '../config.js';
-import { DhtServer } from './DhtServer.js';
-import { P2pServer } from './P2pServer.js';
+import { match } from 'ts-pattern';
+import { Contract } from '../contracts/Contract.js';
+import { pingContract } from '../contracts/pingContract.js';
+import { pongContract } from '../contracts/pongContract.js';
+import { Server } from './Server.js';
 
 const SERVICE_NAME = 'web-socket-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type WebSocketServerOptions = {
-  p2pServer: P2pServer;
-  dhtServer: DhtServer;
+  port: number;
 };
 
-export type ListenArgs = {
-  port?: number;
+export type HandleMessageArgs = {
+  payload: typeof Contract.$BASE_ENVELOP;
+  socket: WebSocket;
 };
 
-export class WebSocketServer {
-  private p2pServer: P2pServer;
-  private dhtServer: DhtServer;
+export abstract class WebSocketServer extends Server {
+  private server: Wss;
+  private sockets: WebSocket[] = [];
 
   constructor(opts: WebSocketServerOptions) {
-    this.dhtServer = opts.dhtServer;
-    this.p2pServer = opts.p2pServer;
+    super({
+      ...opts,
+      protocol: 'ws',
+    });
   }
 
-  listen({ port }: ListenArgs): Wss {
-    const server = new Wss({
-      port,
+  getSockets(): WebSocket[] {
+    return this.sockets;
+  }
+
+  override listen(): void {
+    this.server = new Wss({
+      port: this.port,
       host: HOSTNAME,
     });
 
-    server.on('listening', () => {
-      log.info(`Websocket server running on ws://${HOSTNAME}:${port}`);
+    this.server.on('listening', () => {
+      log.info(`Websocket server running on ${this.address}`);
     });
 
-    this.p2pServer.attachServer(server);
-    this.dhtServer.attachServer(server);
+    this.server.on('connection', (socket) => {
+      this.connectSocket(socket);
+    });
+  }
 
-    return server;
+  protected connectSocket(socket: WebSocket): void {
+    this.sockets.push(socket);
+    this._handleMessage(socket);
+  }
+
+  protected abstract handleMessage(opts: {
+    payload: typeof Contract.$BASE_ENVELOP;
+    socket: WebSocket;
+  }): void;
+
+  private _handleMessage(socket: WebSocket): void {
+    socket.on('message', (message) => {
+      const parsedMessage = Contract.parse(message);
+
+      if (parsedMessage.success === false) {
+        return;
+      }
+
+      const payload = parsedMessage.data;
+
+      match(payload)
+        .when(pingContract.is, () => this.handlePing())
+        .when(pongContract.is, () => this.handlePong())
+        .otherwise(() =>
+          this.handleMessage({
+            payload,
+            socket,
+          }),
+        );
+    });
+  }
+
+  private handlePing(): void {
+    log.debug('handlePing()');
+  }
+
+  private handlePong(): void {
+    log.debug('handlePong()');
+  }
+
+  protected broadcastMessage(
+    broadcastMessageHandler: (socket: WebSocket) => void,
+  ): void {
+    for (const socket of this.sockets) {
+      broadcastMessageHandler(socket);
+    }
+  }
+
+  protected connectToPeer(peerAddress: string): WebSocket {
+    const socket = new WebSocket(peerAddress);
+
+    socket.on('open', () => {
+      this.connectSocket(socket);
+
+      log.info(`Connected to peer: ${peerAddress}`);
+    });
+
+    return socket;
+  }
+
+  protected sendMessage(peer: string | WebSocket, data: string): void {
+    const socket = typeof peer === 'string' ? new WebSocket(peer) : peer;
+
+    socket.send(data);
   }
 }
