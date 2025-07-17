@@ -39,7 +39,7 @@ export class Utils {
     p2pServerPort: number;
     kademliaServerPort: number;
   }): {
-    nodeId;
+    nodeId: Buffer;
     apiServerSelfContact: Contact;
     p2pServerSelfContact: Contact;
     kademliaServerSelfContact: Contact;
