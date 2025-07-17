@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { Contact, Server } from '../server/Server.js';
+import { Server } from '../server/Server.js';
 import { Utils } from '../Utils.js';
+import { Contact } from '../Contact.js';
 
 const SERVICE_NAME = 'http-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });

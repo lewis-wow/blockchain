@@ -5,9 +5,10 @@ import { P2pServer } from './P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
-import { Contact, Server } from '../server/Server.js';
+import { Server } from '../server/Server.js';
 import { HttpServer } from '../server/HttpServer.js';
 import { Utils } from '../Utils.js';
+import { Contact } from '../Contact.js';
 
 const SERVICE_NAME = 'api-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });

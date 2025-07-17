@@ -2,10 +2,12 @@ import { BlockChain } from '../blockchain/BlockChain.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
 import { Utils } from '../Utils.js';
-import { Contact, Server } from '../server/Server.js';
-import { RpcMessage, RpcServer } from '../server/RpcServer.js';
+import { Server } from '../server/Server.js';
+import { RpcServer } from '../server/RpcServer.js';
 import { KademliaServer } from '../kademlia/KademliaServer.js';
 import { JSONArray, JSONObject } from '../types.js';
+import { Contact } from '../Contact.js';
+import { RpcMessage } from '../RpcMessage.js';
 
 const SERVICE_NAME = 'p2p-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });

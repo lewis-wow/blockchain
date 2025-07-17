@@ -1,10 +1,5 @@
 import EventEmitter from 'node:events';
-
-export type Contact = {
-  nodeId: Buffer;
-  host: string;
-  port: number;
-};
+import { Contact } from '../Contact.js';
 
 export abstract class Server extends EventEmitter {
   constructor(protected selfContact: Contact) {

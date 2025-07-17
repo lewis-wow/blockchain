@@ -7,7 +7,7 @@ import {
 } from 'winston';
 import { HOSTNAME, ID_BYTES, LOG_LEVEL } from './consts.js';
 import util from 'util';
-import { Contact } from './server/Server.js';
+import { Contact } from './Contact.js';
 
 const { combine, printf, colorize } = format;
 
@@ -48,21 +48,21 @@ export class Utils {
 
     return {
       nodeId,
-      apiServerSelfContact: {
+      apiServerSelfContact: new Contact({
         host: HOSTNAME,
         port: args.apiServerPort,
         nodeId,
-      },
-      p2pServerSelfContact: {
+      }),
+      p2pServerSelfContact: new Contact({
         host: HOSTNAME,
         port: args.p2pServerPort,
         nodeId,
-      },
-      kademliaServerSelfContact: {
+      }),
+      kademliaServerSelfContact: new Contact({
         host: HOSTNAME,
         port: args.kademliaServerPort,
         nodeId,
-      },
+      }),
     };
   }
 

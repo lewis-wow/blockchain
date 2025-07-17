@@ -8,6 +8,7 @@ import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
 import { Utils } from '../Utils.js';
 import { KademliaServer } from '../kademlia/KademliaServer.js';
+import { Contact } from '../Contact.js';
 
 const DEFAULT_PORT = 3000;
 const BOOTSTRAP_SERVER_REGEX = /^(.+)@(.+):(\d+)$/;
@@ -60,11 +61,13 @@ yargs(hideBin(process.argv))
         const [, bootstrapNodeId, bootstrapHostname, bootstrapPort] =
           bootstrapRegexMatch;
 
-        kademliaServer.bootstrap({
-          host: bootstrapHostname,
-          port: Number.parseInt(bootstrapPort),
-          nodeId: Buffer.from(bootstrapNodeId),
-        });
+        kademliaServer.bootstrap(
+          Contact.fromJSON({
+            host: bootstrapHostname,
+            port: Number.parseInt(bootstrapPort),
+            nodeId: bootstrapNodeId,
+          }),
+        );
       }
 
       const p2pServer = new P2pServer(p2pServerSelfContact, {
@@ -90,7 +93,9 @@ yargs(hideBin(process.argv))
       });
       apiServer.listen();
 
-      log.info(`Running node ${nodeId.toString('hex')}.`);
+      log.info(
+        `Running node ${nodeId.toString('hex')}@${kademliaServer.getSelfContact().host}:${kademliaServer.getSelfContact().port}.`,
+      );
     },
   )
   .help()

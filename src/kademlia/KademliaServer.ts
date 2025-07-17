@@ -1,10 +1,13 @@
 // src/Node.ts
 
 import { RoutingTable } from './RoutingTable.js';
-import { RpcMessage, RpcServer } from '../server/RpcServer.js';
+import { RpcServer } from '../server/RpcServer.js';
 import { ALPHA } from '../consts.js';
-import { Contact, Server } from '../server/Server.js';
+import { Server } from '../server/Server.js';
 import { Utils } from '../Utils.js';
+import { Contact } from '../Contact.js';
+import { RpcMessage } from '../RpcMessage.js';
+import { JSONObject } from '../types.js';
 
 const SERVICE_NAME = 'kademlia-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
@@ -13,14 +16,13 @@ const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
  * Represents a Kademlia node in the network.
  */
 export class KademliaServer extends Server {
-  public readonly nodeId: Buffer;
   public readonly routingTable: RoutingTable;
   private readonly rpc: RpcServer;
 
   constructor(selfContact: Contact) {
     super(selfContact);
 
-    this.routingTable = new RoutingTable(this.nodeId);
+    this.routingTable = new RoutingTable(this.selfContact.nodeId);
     this.rpc = new RpcServer(this.selfContact);
     this.setupRpcHandlers();
   }
@@ -54,8 +56,8 @@ export class KademliaServer extends Server {
 
     this.rpc.on(
       'FIND_NODE_REQUEST',
-      (message: RpcMessage<{ targetId: string }>) => {
-        const targetId = Buffer.from(message.payload.targetId, 'hex');
+      (message: RpcMessage<{ targetId: Buffer }>) => {
+        const targetId = message.payload.targetId;
         const closest = this.routingTable.findClosest(targetId);
         this.rpc.respond({
           target: message.sender,
@@ -92,7 +94,9 @@ export class KademliaServer extends Server {
    */
   public async findNode(targetId: Buffer): Promise<Contact[]> {
     const closestNodes = this.routingTable.findClosest(targetId, ALPHA);
-    const queriedNodes = new Set<string>([this.nodeId.toString('hex')]);
+    const queriedNodes = new Set<string>([
+      this.selfContact.nodeId.toString('hex'),
+    ]);
 
     const find = async (): Promise<void> => {
       const nodesToQuery = closestNodes.filter(
@@ -105,7 +109,7 @@ export class KademliaServer extends Server {
       // Mark as queried
       nodesToQuery.forEach((n) => queriedNodes.add(n.nodeId.toString('hex')));
 
-      const promises: Promise<RpcMessage<{ contacts: Contact[] }>>[] =
+      const promises: Promise<RpcMessage<{ contacts: JSONObject[] }>>[] =
         nodesToQuery.map((node) =>
           this.rpc.request({
             target: node,
@@ -122,12 +126,12 @@ export class KademliaServer extends Server {
       results.forEach((result) => {
         if (result.status === 'fulfilled') {
           const response = result.value;
-          const newContacts: Contact[] = response.payload.contacts.map((c) => ({
-            ...c,
-            nodeId: c.nodeId,
-          }));
+          const newContacts: Contact[] = response.payload.contacts.map(
+            (contact) => Contact.fromJSON(contact),
+          );
 
           newContacts.forEach((contact) => {
+            console.log('foreach');
             this.routingTable.addContact(contact);
             const isNew = !closestNodes.some((n) =>
               n.nodeId.equals(contact.nodeId),
@@ -161,9 +165,10 @@ export class KademliaServer extends Server {
     log.info(
       `[${this.selfContact.port}] Bootstrapping to ${bootstrapContact.port}...`,
     );
+    console.log('bootstrap');
     this.routingTable.addContact(bootstrapContact);
     // Discover other nodes by performing a lookup for our own ID
-    await this.findNode(this.nodeId);
+    await this.findNode(this.selfContact.nodeId);
     log.info(`[${this.selfContact.port}] Bootstrap complete.`);
   }
 }

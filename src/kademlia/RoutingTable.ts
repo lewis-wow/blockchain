@@ -2,7 +2,7 @@ import EventEmitter from 'node:events';
 import { KBucket } from './KBucket.js';
 import { ID_BITS, K_BUCKET_SIZE } from '../consts.js';
 import { Utils } from './Utils.js';
-import { Contact } from '../server/Server.js';
+import { Contact } from '../Contact.js';
 
 /**
  * Manages all the k-buckets for a node.
@@ -25,6 +25,7 @@ export class RoutingTable extends EventEmitter {
    * @param contact The contact to add.
    */
   addContact(contact: Contact): void {
+    console.log(contact);
     if (contact.nodeId.equals(this.nodeId)) {
       return; // Do not add self
     }

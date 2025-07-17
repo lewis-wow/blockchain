@@ -2,16 +2,11 @@
 
 import { createSocket, Socket } from 'dgram';
 import { randomBytes } from 'crypto';
-import { Server, Contact } from './Server.js';
+import { Server } from './Server.js';
 import { KademliaServer } from '../kademlia/KademliaServer.js';
 import { Utils } from '../Utils.js';
-
-export type RpcMessage<TPayload = unknown> = {
-  type: string;
-  payload: TPayload;
-  sender: Contact;
-  rpcId: string;
-};
+import { Contact } from '../Contact.js';
+import { RpcMessage } from '../RpcMessage.js';
 
 const SERVICE_NAME = 'rpc-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
@@ -35,7 +30,7 @@ export class RpcServer extends Server {
   private setupListeners(): void {
     this.socket.on('message', (msg) => {
       try {
-        const message: RpcMessage = JSON.parse(msg.toString());
+        const message = RpcMessage.fromJSON(JSON.parse(msg.toString()));
 
         // When we hear from a node, we update our routing table.
         // The sender's contact info is in the message itself.
@@ -89,16 +84,16 @@ export class RpcServer extends Server {
 
     return new Promise((resolve, reject) => {
       const rpcId = randomBytes(16).toString('hex');
-      const message: RpcMessage = {
+      const message = new RpcMessage({
         type,
         rpcId,
         sender: this.selfContact,
         payload,
-      };
+      });
 
       this.pendingRequests.set(rpcId, resolve);
 
-      const buffer = Buffer.from(JSON.stringify(message));
+      const buffer = Buffer.from(JSON.stringify(message.toJSON()));
       this.socket.send(buffer, target.port, target.host, (err) => {
         if (err) {
           this.pendingRequests.delete(rpcId);
@@ -136,13 +131,13 @@ export class RpcServer extends Server {
     payload: unknown;
   }): void {
     const { target, message, type, payload } = args;
-    const response: RpcMessage = {
+    const response = new RpcMessage({
       type,
       rpcId: message.rpcId, // Echo the rpcId from the request
       sender: this.selfContact,
       payload,
-    };
-    const buffer = Buffer.from(JSON.stringify(response));
+    });
+    const buffer = Buffer.from(JSON.stringify(response.toJSON()));
     this.socket.send(buffer, target.port, target.host);
   }
 
