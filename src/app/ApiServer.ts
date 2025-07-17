@@ -1,12 +1,11 @@
 import { zValidator } from '@hono/zod-validator';
 import { BlockChain } from '../blockchain/BlockChain.js';
 import z from 'zod';
-import { P2pServer } from '../p2p/P2pServer.js';
+import { P2pServer } from './P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
 import { Contact, Server } from '../server/Server.js';
-import { DhtServer } from '../app/DhtServer.js';
 import { HttpServer } from '../server/HttpServer.js';
 import { Utils } from '../Utils.js';
 
@@ -16,7 +15,6 @@ const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 export type ApiServerOptions = {
   blockChain: BlockChain;
   p2pServer: P2pServer;
-  dhtServer: DhtServer;
   transactionPool: TransactionPool;
   wallet: Wallet;
   miner: Miner;
@@ -27,7 +25,6 @@ export class ApiServer extends Server {
   private transactionPool: TransactionPool;
   private wallet: Wallet;
   private p2pServer: P2pServer;
-  private dhtServer: DhtServer;
   private miner: Miner;
   private httpServer: HttpServer;
 
@@ -38,7 +35,6 @@ export class ApiServer extends Server {
     this.transactionPool = opts.transactionPool;
     this.wallet = opts.wallet;
     this.p2pServer = opts.p2pServer;
-    this.dhtServer = opts.dhtServer;
     this.miner = opts.miner;
     this.httpServer = new HttpServer(this.selfContact);
 
@@ -86,7 +82,7 @@ export class ApiServer extends Server {
           blockChain: this.blockChain,
         });
 
-        this.p2pServer.broadcastTransactions(transaction);
+        this.p2pServer.broadcastTransaction(transaction);
 
         return c.json(transaction.toJSON());
       },

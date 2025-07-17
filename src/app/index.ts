@@ -1,16 +1,19 @@
 import { BlockChain } from '../blockchain/BlockChain.js';
-import { P2pServer } from '../p2p/P2pServer.js';
+import { P2pServer } from './P2pServer.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { ApiServer } from '../api/ApiServer.js';
+import { ApiServer } from './ApiServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
-import { DhtServer } from './DhtServer.js';
 import { Utils } from '../Utils.js';
-import { HOSTNAME } from '../consts.js';
+import { KademliaServer } from '../kademlia/KademliaServer.js';
 
 const DEFAULT_PORT = 3000;
+const BOOTSTRAP_SERVER_REGEX = /^(.+)@(.+):(\d+)$/;
+
+const SERVICE_NAME = 'app';
+const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 
 yargs(hideBin(process.argv))
   .command(
@@ -24,38 +27,52 @@ yargs(hideBin(process.argv))
           default: DEFAULT_PORT,
         })
         .positional('bootstrap', {
-          describe: 'bootstrap server addresss',
+          describe: 'bootstrap server addresss in format nodeId@hostname:port',
           type: 'string',
         });
     },
     async (argv) => {
-      const selfNodeId = Utils.createNodeId();
-      const port = argv.port;
-      const bootstrap = argv.bootstrap;
-      const p2pPort = port + 1000;
-      const dhtPort = port + 2000;
-      const peers = [];
+      const apiServerPort = argv.port;
+      const p2pServerPort = apiServerPort + 1000;
+      const kademliaServerPort = apiServerPort + 2000;
+
+      const bootstrapRegexMatch = argv.bootstrap?.match(BOOTSTRAP_SERVER_REGEX);
+
+      const {
+        nodeId,
+        apiServerSelfContact,
+        p2pServerSelfContact,
+        kademliaServerSelfContact,
+      } = Utils.createNodeSelfContacts({
+        apiServerPort,
+        p2pServerPort,
+        kademliaServerPort,
+      });
 
       const blockChain = new BlockChain();
       const wallet = new Wallet();
       const transactionPool = new TransactionPool();
 
-      const p2pServer = new P2pServer({
+      const kademliaServer = new KademliaServer(kademliaServerSelfContact);
+      kademliaServer.listen();
+
+      if (bootstrapRegexMatch) {
+        const [, bootstrapNodeId, bootstrapHostname, bootstrapPort] =
+          bootstrapRegexMatch;
+
+        kademliaServer.bootstrap({
+          host: bootstrapHostname,
+          port: Number.parseInt(bootstrapPort),
+          nodeId: Buffer.from(bootstrapNodeId),
+        });
+      }
+
+      const p2pServer = new P2pServer(p2pServerSelfContact, {
         blockChain,
         transactionPool,
-        peers,
-        port: p2pPort,
+        kademliaServer,
       });
       p2pServer.listen();
-
-      const dhtServer = new DhtServer({
-        port: dhtPort,
-      });
-      dhtServer.listen();
-
-      if (bootstrap) {
-        dhtServer.join(bootstrap);
-      }
 
       const miner = new Miner({
         blockChain,
@@ -64,22 +81,16 @@ yargs(hideBin(process.argv))
         transactionPool,
       });
 
-      const apiServer = new ApiServer(
-        {
-          nodeId: selfNodeId,
-          host: HOSTNAME,
-          port,
-        },
-        {
-          blockChain,
-          p2pServer,
-          dhtServer,
-          wallet,
-          transactionPool,
-          miner,
-        },
-      );
+      const apiServer = new ApiServer(apiServerSelfContact, {
+        blockChain,
+        p2pServer,
+        wallet,
+        transactionPool,
+        miner,
+      });
       apiServer.listen();
+
+      log.info(`Running node ${nodeId}.`);
     },
   )
   .help()

@@ -3,6 +3,8 @@
 import { createSocket, Socket } from 'dgram';
 import { randomBytes } from 'crypto';
 import { Server, Contact } from './Server.js';
+import { KademliaServer } from '../kademlia/KademliaServer.js';
+import { Utils } from '../Utils.js';
 
 export type RpcMessage<TPayload = unknown> = {
   type: string;
@@ -10,6 +12,9 @@ export type RpcMessage<TPayload = unknown> = {
   sender: Contact;
   rpcId: string;
 };
+
+const SERVICE_NAME = 'rpc-server';
+const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 
 /**
  * Handles sending and receiving RPC messages over UDP.
@@ -139,5 +144,25 @@ export class RpcServer extends Server {
     };
     const buffer = Buffer.from(JSON.stringify(response));
     this.socket.send(buffer, target.port, target.host);
+  }
+
+  async broadcast(
+    kademlia: KademliaServer,
+    request: (contact: Contact) => Promise<RpcMessage<unknown>>,
+  ): Promise<RpcMessage<unknown>[]> {
+    const contacts = kademlia.routingTable.getAllContacts();
+
+    return await Promise.all(
+      contacts.map((contact) =>
+        request(contact).catch((error) => {
+          log.warn(
+            `Failed to broadcast clear signal to ${contact.host}:${contact.port}`,
+            error,
+          );
+
+          return error;
+        }),
+      ),
+    );
   }
 }

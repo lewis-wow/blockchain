@@ -5,8 +5,9 @@ import {
   format,
   transports,
 } from 'winston';
-import { ID_BYTES, LOG_LEVEL } from './consts.js';
+import { HOSTNAME, ID_BYTES, LOG_LEVEL } from './consts.js';
 import util from 'util';
+import { Contact } from './server/Server.js';
 
 const { combine, printf, colorize } = format;
 
@@ -31,6 +32,38 @@ export class Utils {
 
   static sha256(value: string): string {
     return createHash('sha256').update(value).digest('hex');
+  }
+
+  static createNodeSelfContacts(args: {
+    apiServerPort: number;
+    p2pServerPort: number;
+    kademliaServerPort: number;
+  }): {
+    nodeId;
+    apiServerSelfContact: Contact;
+    p2pServerSelfContact: Contact;
+    kademliaServerSelfContact: Contact;
+  } {
+    const nodeId = Utils.createNodeId();
+
+    return {
+      nodeId,
+      apiServerSelfContact: {
+        host: HOSTNAME,
+        port: args.apiServerPort,
+        nodeId,
+      },
+      p2pServerSelfContact: {
+        host: HOSTNAME,
+        port: args.p2pServerPort,
+        nodeId,
+      },
+      kademliaServerSelfContact: {
+        host: HOSTNAME,
+        port: args.kademliaServerPort,
+        nodeId,
+      },
+    };
   }
 
   static readonly defaultLog = winstonCreateLogger({
