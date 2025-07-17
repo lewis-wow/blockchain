@@ -31,11 +31,15 @@ export class P2pServer extends Server {
     this.kademliaServer = opts.kademliaServer;
   }
 
+  override getAddress(): string {
+    return `ws:${super.getAddress()}`;
+  }
+
   override listen(): void {
     this.setupRpcHandlers();
     this.rpc.listen();
 
-    log.info(`Peer-to-peer server running on ${this.getAddress()}`);
+    log.info(`P2P server listening on ${this.getAddress()}`);
     super.listen();
   }
 

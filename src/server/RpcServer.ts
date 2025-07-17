@@ -58,7 +58,7 @@ export class RpcServer extends Server {
 
     this.socket.on('listening', () => {
       const address = this.socket.address();
-      console.log(`RPC server listening on ${address.address}:${address.port}`);
+      log.debug(`RPC server listening on ${address.address}:${address.port}`);
     });
   }
 

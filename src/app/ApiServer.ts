@@ -101,10 +101,14 @@ export class ApiServer extends Server {
     });
   }
 
+  override getAddress(): string {
+    return `http:${super.getAddress()}`;
+  }
+
   override listen(): void {
     this.httpServer.listen();
 
-    log.info(`Peer-to-peer server running on ${this.getAddress()}`);
+    log.info(`API server listening on ${this.getAddress()}`);
     super.listen();
   }
 }

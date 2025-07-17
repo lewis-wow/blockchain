@@ -25,7 +25,7 @@ export class HttpServer extends Server {
         port: this.selfContact.port,
       },
       () => {
-        log.info(`Server running on ${this.getAddress()}`);
+        log.debug(`HTTP server listening on ${this.getAddress()}`);
         super.listen();
       },
     );

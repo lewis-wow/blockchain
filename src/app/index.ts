@@ -90,7 +90,7 @@ yargs(hideBin(process.argv))
       });
       apiServer.listen();
 
-      log.info(`Running node ${nodeId}.`);
+      log.info(`Running node ${nodeId.toString('hex')}.`);
     },
   )
   .help()
