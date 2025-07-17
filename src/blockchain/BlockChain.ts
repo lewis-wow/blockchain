@@ -1,7 +1,7 @@
 import { first, isEqual, last } from 'lodash-es';
 import { Block } from './Block.js';
 import { log as defaultLog } from '../utils/logger.js';
-import { Serializable } from '../utils/Serializable.js';
+import { Serializable } from '../Serializable.js';
 import { JSONArray, JSONData, JSONObject } from '../types.js';
 
 const SERVICE_NAME = 'blockchain';

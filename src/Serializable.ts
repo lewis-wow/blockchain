@@ -1,4 +1,4 @@
-import { JSONData } from '../types.js';
+import { JSONData } from './types.js';
 
 export abstract class Serializable {
   abstract toJSON(): JSONData;

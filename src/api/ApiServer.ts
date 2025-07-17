@@ -1,54 +1,52 @@
-import { Hono } from 'hono';
-import { log as defaultLog } from '../utils/logger.js';
 import { zValidator } from '@hono/zod-validator';
 import { BlockChain } from '../blockchain/BlockChain.js';
 import z from 'zod';
-import { serve } from '@hono/node-server';
-import { P2pServer } from './P2pServer.js';
+import { P2pServer } from '../p2p/P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
-import { HOSTNAME } from '../config.js';
-import { Server } from './Server.js';
+import { Contact, Server } from '../server/Server.js';
+import { DhtServer } from '../app/DhtServer.js';
+import { HttpServer } from '../server/HttpServer.js';
+import { Utils } from '../Utils.js';
 
-const SERVICE_NAME = 'http-server';
+const SERVICE_NAME = 'api-server';
+const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 
-const log = defaultLog.child({ serviceName: SERVICE_NAME });
-
-export type HttpServerOptions = {
+export type ApiServerOptions = {
   blockChain: BlockChain;
   p2pServer: P2pServer;
+  dhtServer: DhtServer;
   transactionPool: TransactionPool;
   wallet: Wallet;
   miner: Miner;
-  port: number;
 };
 
-export class HttpServer extends Server {
+export class ApiServer extends Server {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
   private wallet: Wallet;
   private p2pServer: P2pServer;
+  private dhtServer: DhtServer;
   private miner: Miner;
-  private app = new Hono();
+  private httpServer: HttpServer;
 
-  constructor(opts: HttpServerOptions) {
-    super({
-      ...opts,
-      protocol: 'http',
-    });
+  constructor(selfContact: Contact, opts: ApiServerOptions) {
+    super(selfContact);
 
     this.blockChain = opts.blockChain;
     this.transactionPool = opts.transactionPool;
     this.wallet = opts.wallet;
     this.p2pServer = opts.p2pServer;
+    this.dhtServer = opts.dhtServer;
     this.miner = opts.miner;
+    this.httpServer = new HttpServer(this.selfContact);
 
-    this.app.get('/blocks', (c) => {
+    this.httpServer.app.get('/blocks', (c) => {
       return c.json(this.blockChain.getChain());
     });
 
-    this.app.post(
+    this.httpServer.app.post(
       '/mine',
       zValidator('json', z.record(z.string(), z.any())),
       (c) => {
@@ -61,7 +59,7 @@ export class HttpServer extends Server {
       },
     );
 
-    this.app.get('/transactions', (c) => {
+    this.httpServer.app.get('/transactions', (c) => {
       return c.json(
         this.transactionPool
           .getTransactions()
@@ -69,7 +67,7 @@ export class HttpServer extends Server {
       );
     });
 
-    this.app.post(
+    this.httpServer.app.post(
       '/transaction',
       zValidator(
         'json',
@@ -94,30 +92,23 @@ export class HttpServer extends Server {
       },
     );
 
-    this.app.post('/mine-transactions', (c) => {
+    this.httpServer.app.post('/mine-transactions', (c) => {
       const block = this.miner.mine();
 
       return c.json(block.toJSON());
     });
 
-    this.app.get('/public-key', (c) => {
+    this.httpServer.app.get('/public-key', (c) => {
       return c.json({
         publicKey: this.wallet.publicKey,
       });
     });
   }
 
-  override listen(handler?: (server: this) => void): void {
-    serve(
-      {
-        fetch: this.app.fetch,
-        hostname: HOSTNAME,
-        port: this.port,
-      },
-      () => {
-        log.info(`Server running on ${this.address}`);
-        handler?.(this);
-      },
-    );
+  override listen(): void {
+    this.httpServer.listen();
+
+    log.info(`Peer-to-peer server running on ${this.getAddress()}`);
+    super.listen();
   }
 }

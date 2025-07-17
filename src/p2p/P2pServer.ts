@@ -1,6 +1,5 @@
 import { BlockChain } from '../blockchain/BlockChain.js';
 import { WebSocket } from 'ws';
-import { log as defaultLog } from '../utils/logger.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
 import { match } from 'ts-pattern';
@@ -8,38 +7,45 @@ import { InvalidMessageType } from '../exceptions/InvalidMessageType.js';
 import { p2pSyncChainsContract } from '../contracts/p2pSyncChainsContract.js';
 import { p2pTransactionContract } from '../contracts/p2ptransactionContract.js';
 import { p2pClearTransactionsContract } from '../contracts/p2pClearTransactionsContract.js';
-import { HandleMessageArgs, WebSocketServer } from './WebSocketServer.js';
+import { WebSocketServer } from '../server/WebSocketServer.js';
+import { Utils } from '../Utils.js';
+import { Contact, Server } from '../server/Server.js';
+import { RpcServer } from '../server/RpcServer.js';
 
-const SERVICE_NAME = 'peer-to-peer-server';
-const log = defaultLog.child({ serviceName: SERVICE_NAME });
+const SERVICE_NAME = 'p2p-server';
+const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type P2pServerOptions = {
   blockChain: BlockChain;
   transactionPool: TransactionPool;
   peers: string[];
-  port: number;
 };
 
-export class P2pServer extends WebSocketServer {
+export class P2pServer extends Server {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
   private peers: string[];
+  private webSocketServer: WebSocketServer;
+  private rpc: RpcServer;
 
-  constructor(opts: P2pServerOptions) {
-    super(opts);
+  constructor(selfContact: Contact, opts: P2pServerOptions) {
+    super(selfContact);
 
     this.blockChain = opts.blockChain;
     this.transactionPool = opts.transactionPool;
     this.peers = opts.peers;
+    this.webSocketServer = new WebSocketServer(selfContact);
+    this.rpc = new RpcServer(selfContact);
   }
 
-  override listen(handler?: (server: this) => void): void {
-    super.listen(handler);
-    this.connectToPeers();
+  override listen(): void {
+    this.webSocketServer.listen();
+    this.rpc.listen();
 
-    this.server.on('listening', () => {
-      log.info(`Peer-to-peer server running on ${this.address}`);
-    });
+    log.info(`Peer-to-peer server running on ${this.getAddress()}`);
+    super.listen();
+
+    this.connectToPeers();
   }
 
   private connectToPeers(): void {

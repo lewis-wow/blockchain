@@ -1,8 +1,8 @@
 import { renderString } from 'prettyjson';
 import { sha256 } from '../utils/sha256.js';
 import { JSONData, JSONObject } from '../types.js';
-import { Serializable } from '../utils/Serializable.js';
-import { BLOCK_DIFFICULTY, BLOCK_MINE_RATE } from '../config.js';
+import { Serializable } from '../Serializable.js';
+import { BLOCK_DIFFICULTY, BLOCK_MINE_RATE } from '../consts.js';
 
 /**
  * Options required to construct a Block.

@@ -18,16 +18,26 @@ const log = defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type DhtServerOptions = {
   port: number;
+  publicKey: string;
+};
+
+export type DhtNode = {
+  id: string;
+  address: string;
+  publicKey: string;
+  lastSeen: number; // To help with refreshing/pruning
 };
 
 export class DhtServer extends WebSocketServer {
   private store = new Map<string, JSONData>();
+  public publicKey: string;
 
   // nodeId -> address
-  private routingTable = new Map<string, string>();
+  private routingTable = new Map<string, DhtNode>();
 
   constructor(opts: DhtServerOptions) {
     super(opts);
+    this.publicKey = opts.publicKey;
   }
 
   get(key: string): JSONData | undefined {

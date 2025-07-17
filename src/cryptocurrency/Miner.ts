@@ -3,7 +3,7 @@ import { BlockChain } from '../blockchain/BlockChain.js';
 import { Transaction } from './Transaction.js';
 import { TransactionPool } from './TransactionPool.js';
 import { Wallet } from './Wallet.js';
-import { P2pServer } from '../app/P2pServer.js';
+import { P2pServer } from '../p2p/P2pServer.js';
 
 export type MinerOptions = {
   blockChain: BlockChain;

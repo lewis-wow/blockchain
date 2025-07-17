@@ -5,7 +5,7 @@ import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Transaction } from './Transaction.js';
 import { BlockChain } from '../blockchain/BlockChain.js';
 import { JSONArray, JSONObject } from '../types.js';
-import { WALLET_INITIAL_BALANCE } from '../config.js';
+import { WALLET_INITIAL_BALANCE } from '../consts.js';
 
 export type CreateTransactionArgs = {
   amount: number;

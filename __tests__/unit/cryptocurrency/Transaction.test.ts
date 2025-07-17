@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { Transaction } from '../../../src/cryptocurrency/Transaction.js';
 import { Wallet } from '../../../src/cryptocurrency/Wallet.js';
-import { MINER_MINING_REWARD } from '../../../src/config.js';
+import { MINER_MINING_REWARD } from '../../../src/consts.js';
 
 describe('Transaction', () => {
   let senderWallet: Wallet, recipientWallet: Wallet;

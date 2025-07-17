@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { Block } from '../../../src/blockchain/Block.js';
-import { BLOCK_DIFFICULTY, BLOCK_MINE_RATE } from '../../../src/config.js';
+import { BLOCK_DIFFICULTY, BLOCK_MINE_RATE } from '../../../src/consts.js';
 
 describe('Block', () => {
   let data: string, lastBlock: Block, block: Block;

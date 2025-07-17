@@ -5,7 +5,7 @@ import {
   createVerify,
   generateKeyPairSync,
 } from 'node:crypto';
-import { KEY_PAIR_SIGN_ALGORITHM } from '../config.js';
+import { KEY_PAIR_SIGN_ALGORITHM } from '../consts.js';
 
 export type KeyPairOptions = {
   publicKey: Buffer;

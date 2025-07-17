@@ -3,9 +3,9 @@ import { Wallet } from './Wallet.js';
 import { sha256 } from '../utils/sha256.js';
 import { KeyPair } from './KeyPair.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
-import { Serializable } from '../utils/Serializable.js';
+import { Serializable } from '../Serializable.js';
 import { JSONObject } from '../types.js';
-import { MINER_MINING_REWARD } from '../config.js';
+import { MINER_MINING_REWARD } from '../consts.js';
 
 export type TransactionInput = {
   timestamp: Date;

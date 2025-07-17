@@ -1,0 +1,41 @@
+import { createHash, randomBytes } from 'node:crypto';
+
+import {
+  createLogger as winstonCreateLogger,
+  format,
+  transports,
+} from 'winston';
+import { ID_BYTES, LOG_LEVEL } from './consts.js';
+import util from 'util';
+
+const { combine, printf, colorize } = format;
+
+const logFormat = printf(
+  ({ level, message, serviceName, [Symbol.for('splat')]: splat }) => {
+    const serviceLabel = serviceName ? `[${serviceName}]` : '';
+
+    const extras = Array.isArray(splat)
+      ? splat
+          .map((val) => util.inspect(val, { depth: null, colors: true }))
+          .join(' ')
+      : '';
+
+    return `${level} ${serviceLabel} ${message}${extras ? ' ' + extras : ''}`;
+  },
+);
+
+export class Utils {
+  static createNodeId(): Buffer {
+    return randomBytes(ID_BYTES);
+  }
+
+  static sha256(value: string): string {
+    return createHash('sha256').update(value).digest('hex');
+  }
+
+  static readonly defaultLog = winstonCreateLogger({
+    level: LOG_LEVEL,
+    format: combine(colorize(), logFormat),
+    transports: [new transports.Console()],
+  });
+}

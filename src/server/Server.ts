@@ -1,0 +1,25 @@
+import EventEmitter from 'node:events';
+
+export type Contact = {
+  nodeId: Buffer;
+  host: string;
+  port: number;
+};
+
+export abstract class Server extends EventEmitter {
+  constructor(protected selfContact: Contact) {
+    super();
+  }
+
+  getSelfContact(): Contact {
+    return this.selfContact;
+  }
+
+  getAddress(): string {
+    return `//${this.selfContact.host}:${this.selfContact.port}`;
+  }
+
+  listen(): void {
+    this.emit('listening');
+  }
+}

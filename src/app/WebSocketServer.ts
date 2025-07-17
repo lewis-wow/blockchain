@@ -1,11 +1,11 @@
 import { WebSocketServer as Wss, WebSocket } from 'ws';
 import { log as defaultLog } from '../utils/logger.js';
-import { HOSTNAME } from '../config.js';
+import { HOSTNAME } from '../consts.js';
 import { match } from 'ts-pattern';
 import { Contract } from '../contracts/Contract.js';
 import { pingContract } from '../contracts/pingContract.js';
 import { pongContract } from '../contracts/pongContract.js';
-import { Server } from './Server.js';
+import { Server } from '../server/Server.js';
 
 const SERVICE_NAME = 'web-socket-server';
 const log = defaultLog.child({ serviceName: SERVICE_NAME });
