@@ -1,11 +1,11 @@
 import { first, isEqual, last } from 'lodash-es';
 import { Block } from './Block.js';
-import { log as defaultLog } from '../utils/logger.js';
 import { Serializable } from '../Serializable.js';
 import { JSONArray, JSONData, JSONObject } from '../types.js';
+import { Utils } from '../Utils.js';
 
 const SERVICE_NAME = 'blockchain';
-const log = defaultLog.child({ serviceName: SERVICE_NAME });
+const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 
 export enum ReplaceChainResult {
   NEW_CHAIN_REPLACE = 'NEW_CHAIN_REPLACE',
@@ -107,7 +107,7 @@ export class BlockChain extends Serializable {
     return this.getChain().map((block) => block.toJSON());
   }
 
-  static fromJSON(json: JSONArray): BlockChain {
+  static override fromJSON(json: JSONArray): BlockChain {
     return new BlockChain(
       json.map((serializedBlock: JSONObject) =>
         Block.fromJSON(serializedBlock),

@@ -1,11 +1,11 @@
 import { v4 as uuid } from 'uuid';
 import { Wallet } from './Wallet.js';
-import { sha256 } from '../utils/sha256.js';
 import { KeyPair } from './KeyPair.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Serializable } from '../Serializable.js';
 import { JSONObject } from '../types.js';
 import { MINER_MINING_REWARD } from '../consts.js';
+import { Utils } from '../Utils.js';
 
 export type TransactionInput = {
   timestamp: Date;
@@ -125,7 +125,9 @@ export class Transaction extends Serializable {
       timestamp: new Date(),
       amount: senderWallet.balance,
       address: senderWallet.publicKey,
-      signature: senderWallet.sign(sha256(JSON.stringify(transaction.outputs))),
+      signature: senderWallet.sign(
+        Utils.sha256(JSON.stringify(transaction.outputs)),
+      ),
     };
   }
 
@@ -135,7 +137,7 @@ export class Transaction extends Serializable {
     return KeyPair.verifySignature({
       publicKey: input!.address,
       signature: input!.signature!,
-      data: sha256(JSON.stringify(transaction.outputs)),
+      data: Utils.sha256(JSON.stringify(transaction.outputs)),
     });
   }
 }

@@ -1,8 +1,8 @@
 import { renderString } from 'prettyjson';
-import { sha256 } from '../utils/sha256.js';
 import { JSONData, JSONObject } from '../types.js';
 import { Serializable } from '../Serializable.js';
 import { BLOCK_DIFFICULTY, BLOCK_MINE_RATE } from '../consts.js';
+import { Utils } from '../Utils.js';
 
 /**
  * Options required to construct a Block.
@@ -77,7 +77,7 @@ export class Block extends Serializable {
     };
   }
 
-  static fromJSON(json: JSONObject): Block {
+  static override fromJSON(json: JSONObject): Block {
     return new Block({
       timestamp: new Date(json.timestamp as string),
       lastHash: json.lastHash as string,
@@ -92,7 +92,7 @@ export class Block extends Serializable {
    * Returns a pretty-printed string representation of the block.
    * @returns {string} Formatted string of the block.
    */
-  toString(): string {
+  override toString(): string {
     return renderString(
       JSON.stringify({
         Block: this.toJSON(),
@@ -109,8 +109,8 @@ export class Block extends Serializable {
 
     return new Block({
       timestamp: epoch,
-      lastHash: sha256('genesis-last-hash'),
-      hash: sha256('genesis-hash'),
+      lastHash: Utils.sha256('genesis-last-hash'),
+      hash: Utils.sha256('genesis-hash'),
       data: {
         transactions: [],
       },
@@ -125,7 +125,7 @@ export class Block extends Serializable {
    * @returns {string} SHA-256 hash.
    */
   static hash(args: HashArgs): string {
-    return sha256(JSON.stringify(args));
+    return Utils.sha256(JSON.stringify(args));
   }
 
   /**
