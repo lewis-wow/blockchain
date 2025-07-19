@@ -34,7 +34,7 @@ export class KademliaServer extends NetworkListenableNode {
 
     this.routingTable.on('contactAdded', (contact) => {
       log.info(
-        `[${this.selfContact.port}] New contact added: ${contact.port} (${contact.nodeId.toString('hex').substring(0, 6)})`,
+        `New contact added: ${contact.port} (${contact.nodeId.toString('hex').substring(0, 6)})`,
       );
     });
 

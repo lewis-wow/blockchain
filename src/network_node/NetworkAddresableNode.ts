@@ -1,4 +1,4 @@
-import { EventMap } from '../TypedEventEmitter.js';
+import { EventMap } from '../event_emitter/ITypedEventEmitter.js';
 import { NetworkListenableNode } from './NetworkListenableNode.js';
 
 /**
