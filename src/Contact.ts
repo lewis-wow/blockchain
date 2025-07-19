@@ -1,17 +1,40 @@
 import { Serializable } from './Serializable.js';
 import { JSONObject } from './types.js';
 
+/**
+ * Defines the options required to create a Contact instance.
+ * @property nodeId - The unique identifier of the node.
+ * @property host - The host address (e.g., IP address or hostname) of the node.
+ * @property port - The port number on which the node is listening.
+ */
 export type ContactOptions = {
-  nodeId: Buffer;
+  nodeId: string;
   host: string;
   port: number;
 };
 
+/**
+ * Represents the contact information for a network node, including its ID, host, and port.
+ * This class extends `Serializable` to support JSON serialization and deserialization.
+ */
 export class Contact extends Serializable {
-  readonly nodeId: Buffer;
+  /**
+   * The unique identifier of the node.
+   */
+  readonly nodeId: string;
+  /**
+   * The host address (e.g., IP address or hostname) of the node.
+   */
   readonly host: string;
+  /**
+   * The port number on which the node is listening.
+   */
   readonly port: number;
 
+  /**
+   * Creates an instance of Contact.
+   * @param opts - An object containing the node ID, host, and port.
+   */
   constructor(opts: ContactOptions) {
     super();
 
@@ -20,17 +43,26 @@ export class Contact extends Serializable {
     this.port = opts.port;
   }
 
+  /**
+   * Converts the Contact instance into a JSON object.
+   * @returns A JSON object representation of the contact.
+   */
   override toJSON(): JSONObject {
     return {
-      nodeId: this.nodeId.toString('hex'),
+      nodeId: this.nodeId,
       port: this.port,
       host: this.host,
     };
   }
 
+  /**
+   * Creates a new Contact instance from a JSON object.
+   * @param json - The JSON object to deserialize into a Contact.
+   * @returns A new Contact instance.
+   */
   static override fromJSON(json: JSONObject): Contact {
     return new Contact({
-      nodeId: Buffer.from(json.nodeId as string, 'hex'),
+      nodeId: json.nodeId as string,
       port: json.port as number,
       host: json.host as string,
     });

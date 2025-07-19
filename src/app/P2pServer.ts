@@ -2,12 +2,12 @@ import { BlockChain } from '../blockchain/BlockChain.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Transaction } from '../cryptocurrency/Transaction.js';
 import { Utils } from '../Utils.js';
-import { Server } from '../server/Server.js';
-import { RpcServer } from '../server/RpcServer.js';
+import { RpcServer } from '../rpc/RpcServer.js';
 import { KademliaServer } from '../kademlia/KademliaServer.js';
 import { JSONArray, JSONObject } from '../types.js';
 import { Contact } from '../Contact.js';
 import { RpcMessage } from '../RpcMessage.js';
+import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
 
 const SERVICE_NAME = 'p2p-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
@@ -18,7 +18,7 @@ export type P2pServerOptions = {
   kademliaServer: KademliaServer;
 };
 
-export class P2pServer extends Server {
+export class P2pServer extends NetworkListenableNode {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
   private rpc: RpcServer;
@@ -33,16 +33,11 @@ export class P2pServer extends Server {
     this.kademliaServer = opts.kademliaServer;
   }
 
-  override getAddress(): string {
-    return `ws:${super.getAddress()}`;
-  }
-
   override listen(): void {
     this.setupRpcHandlers();
     this.rpc.listen();
 
-    log.info(`P2P server listening on ${this.getAddress()}`);
-    super.listen();
+    log.info(`P2P server listening on ${this.getNetworkIdentifier()}`);
   }
 
   /**

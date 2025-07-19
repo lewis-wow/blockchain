@@ -40,7 +40,6 @@ yargs(hideBin(process.argv))
       const bootstrapRegexMatch = argv.bootstrap?.match(BOOTSTRAP_SERVER_REGEX);
 
       const {
-        nodeId,
         apiServerSelfContact,
         p2pServerSelfContact,
         kademliaServerSelfContact,
@@ -94,7 +93,7 @@ yargs(hideBin(process.argv))
       apiServer.listen();
 
       log.info(
-        `Running node ${nodeId.toString('hex')}@${kademliaServer.getSelfContact().host}:${kademliaServer.getSelfContact().port}.`,
+        `Bootstrap server listening on ${kademliaServer.getNetworkIdentifier()}.`,
       );
     },
   )

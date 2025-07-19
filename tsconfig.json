@@ -19,6 +19,7 @@
     "noImplicitThis": false,
     "strictNullChecks": true,
     "noImplicitOverride": true,
+    "skipLibCheck": true
   },
   "include": ["src", "__tests__"]
 }

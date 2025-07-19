@@ -1,5 +1,5 @@
 export class GenericException extends Error {
-  name: string;
+  override readonly name: string;
 
   constructor(message: string) {
     super(message);

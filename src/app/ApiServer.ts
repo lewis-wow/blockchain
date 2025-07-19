@@ -5,10 +5,10 @@ import { P2pServer } from './P2pServer.js';
 import { TransactionPool } from '../cryptocurrency/TransactionPool.js';
 import { Wallet } from '../cryptocurrency/Wallet.js';
 import { Miner } from '../cryptocurrency/Miner.js';
-import { Server } from '../server/Server.js';
-import { HttpServer } from '../server/HttpServer.js';
+import { HttpServer } from '../http/HttpServer.js';
 import { Utils } from '../Utils.js';
 import { Contact } from '../Contact.js';
+import { NetworkAddresableNode } from '../network_node/NetworkAddresableNode.js';
 
 const SERVICE_NAME = 'api-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
@@ -21,7 +21,7 @@ export type ApiServerOptions = {
   miner: Miner;
 };
 
-export class ApiServer extends Server {
+export class ApiServer extends NetworkAddresableNode {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
   private wallet: Wallet;
@@ -103,13 +103,11 @@ export class ApiServer extends Server {
   }
 
   override getAddress(): string {
-    return `http:${super.getAddress()}`;
+    return `http://${this.selfContact.host}:${this.selfContact.port}`;
   }
 
   override listen(): void {
     this.httpServer.listen();
-
     log.info(`API server listening on ${this.getAddress()}`);
-    super.listen();
   }
 }

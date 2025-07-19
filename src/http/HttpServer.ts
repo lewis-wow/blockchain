@@ -1,21 +1,13 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { Server } from '../server/Server.js';
-import { Utils } from '../Utils.js';
 import { Contact } from '../Contact.js';
+import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
 
-const SERVICE_NAME = 'http-server';
-const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
-
-export class HttpServer extends Server {
+export class HttpServer extends NetworkListenableNode {
   public app = new Hono();
 
   constructor(selfContact: Contact) {
     super(selfContact);
-  }
-
-  override getAddress(): string {
-    return `http:${super.getAddress()}`;
   }
 
   override listen(): void {
@@ -26,8 +18,7 @@ export class HttpServer extends Server {
         port: this.selfContact.port,
       },
       () => {
-        log.debug(`HTTP server listening on ${this.getAddress()}`);
-        super.listen();
+        this.emit('listening');
       },
     );
   }

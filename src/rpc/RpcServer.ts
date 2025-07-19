@@ -2,19 +2,14 @@
 
 import { createSocket, Socket } from 'dgram';
 import { randomBytes } from 'crypto';
-import { Server } from './Server.js';
-import { KademliaServer } from '../kademlia/KademliaServer.js';
-import { Utils } from '../Utils.js';
 import { Contact } from '../Contact.js';
 import { RpcMessage } from '../RpcMessage.js';
-
-const SERVICE_NAME = 'rpc-server';
-const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
+import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
 
 /**
  * Handles sending and receiving RPC messages over UDP.
  */
-export class RpcServer extends Server {
+export class RpcServer extends NetworkListenableNode {
   private readonly socket: Socket;
   private readonly pendingRequests: Map<
     string,
@@ -52,8 +47,7 @@ export class RpcServer extends Server {
     });
 
     this.socket.on('listening', () => {
-      const address = this.socket.address();
-      log.debug(`RPC server listening on ${address.address}:${address.port}`);
+      this.emit('listening');
     });
   }
 
@@ -63,7 +57,6 @@ export class RpcServer extends Server {
    */
   public override listen(): void {
     this.socket.bind(this.selfContact.port, this.selfContact.host);
-    super.listen();
   }
 
   /**
@@ -141,23 +134,20 @@ export class RpcServer extends Server {
     this.socket.send(buffer, target.port, target.host);
   }
 
-  async broadcast(
-    kademlia: KademliaServer,
-    request: (contact: Contact) => Promise<RpcMessage<unknown>>,
-  ): Promise<RpcMessage<unknown>[]> {
-    const contacts = kademlia.routingTable.getAllContacts();
-
-    return await Promise.all(
-      contacts.map((contact) =>
-        request(contact).catch((error) => {
-          log.warn(
-            `Failed to broadcast clear signal to ${contact.host}:${contact.port}`,
-            error,
-          );
-
-          return error;
-        }),
-      ),
-    );
+  createBroadcast(args: {
+    type: string;
+    message: RpcMessage;
+    payload: unknown;
+  }): (contacts: Contact[]) => Promise<RpcMessage<unknown>[]> {
+    return async (contacts: Contact[]) => {
+      return await Promise.all(
+        contacts.map((contact) =>
+          this.request({
+            target: contact,
+            ...args,
+          }),
+        ),
+      );
+    };
   }
 }

@@ -1,0 +1,32 @@
+import { EventEmitter } from 'node:stream';
+import { Contact } from '../Contact.js';
+
+/**
+ * Abstract base class for a network node.
+ * Defines common properties and methods that all network nodes should have.
+ */
+export abstract class NetworkNode extends EventEmitter {
+  /**
+   * @param selfContact - The contact information for this network node.
+   */
+  constructor(protected selfContact: Contact) {
+    super();
+  }
+
+  /**
+   * Retrieves the contact information for this network node.
+   * @returns The Contact object representing this node.
+   */
+  getContact(): Contact {
+    return this.selfContact;
+  }
+
+  /**
+   * Generates a unique network identifier string for this node.
+   * The identifier is formatted as "nodeId@host:port".
+   * @returns A string representing the network identifier.
+   */
+  getNetworkIdentifier(): string {
+    return `${this.selfContact.nodeId}@${this.selfContact.host}:${this.selfContact.port}`;
+  }
+}

@@ -2,7 +2,7 @@
 
 import { K_BUCKET_SIZE } from '../consts.js';
 import { Utils } from '../Utils.js';
-import { Contact } from '../server/Server.js';
+import { Contact } from '../Contact.js';
 
 const SERVICE_NAME = 'k-bucket';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
@@ -15,8 +15,8 @@ export class KBucket {
   private readonly bucketSize: number = K_BUCKET_SIZE;
 
   add(contact: Contact): void {
-    const existingIndex = this.contacts.findIndex((c) =>
-      c.nodeId.equals(contact.nodeId),
+    const existingIndex = this.contacts.findIndex(
+      (c) => c.nodeId === contact.nodeId,
     );
 
     if (existingIndex !== -1) {
@@ -42,11 +42,11 @@ export class KBucket {
     return [...this.contacts];
   }
 
-  getContact(nodeId: Buffer): Contact | undefined {
-    return this.contacts.find((c) => c.nodeId.equals(nodeId));
+  getContact(nodeId: string): Contact | undefined {
+    return this.contacts.find((c) => c.nodeId === nodeId);
   }
 
-  hasContact(nodeId: Buffer): boolean {
+  hasContact(nodeId: string): boolean {
     return !!this.getContact(nodeId);
   }
 }

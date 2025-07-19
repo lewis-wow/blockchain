@@ -26,8 +26,8 @@ const logFormat = printf(
 );
 
 export class Utils {
-  static createNodeId(): Buffer {
-    return randomBytes(ID_BYTES);
+  static createNodeId(): string {
+    return randomBytes(ID_BYTES).toString('hex');
   }
 
   static sha256(value: string): string {
@@ -39,7 +39,7 @@ export class Utils {
     p2pServerPort: number;
     kademliaServerPort: number;
   }): {
-    nodeId: Buffer;
+    nodeId: string;
     apiServerSelfContact: Contact;
     p2pServerSelfContact: Contact;
     kademliaServerSelfContact: Contact;

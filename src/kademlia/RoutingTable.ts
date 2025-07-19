@@ -8,10 +8,10 @@ import { Contact } from '../Contact.js';
  * Manages all the k-buckets for a node.
  */
 export class RoutingTable extends EventEmitter {
-  public readonly nodeId: Buffer;
+  public readonly nodeId: string;
   private readonly buckets: KBucket[] = [];
 
-  constructor(nodeId: Buffer) {
+  constructor(nodeId: string) {
     super();
     this.nodeId = nodeId;
 
@@ -25,8 +25,7 @@ export class RoutingTable extends EventEmitter {
    * @param contact The contact to add.
    */
   addContact(contact: Contact): void {
-    console.log(contact);
-    if (contact.nodeId.equals(this.nodeId)) {
+    if (contact.nodeId === this.nodeId) {
       return; // Do not add self
     }
 
@@ -51,7 +50,7 @@ export class RoutingTable extends EventEmitter {
    * @param count The number of contacts to return (defaults to K_BUCKET_SIZE).
    * @returns A sorted list of the closest contacts.
    */
-  findClosest(targetId: Buffer, count: number = K_BUCKET_SIZE): Contact[] {
+  findClosest(targetId: string, count: number = K_BUCKET_SIZE): Contact[] {
     const allContacts: Contact[] = [];
     this.buckets.forEach((bucket) => {
       allContacts.push(...bucket.getContacts());
