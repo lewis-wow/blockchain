@@ -1,4 +1,3 @@
-import { K_BUCKET_SIZE } from '../consts.js';
 import { Utils } from '../Utils.js';
 import { Contact } from '../Contact.js';
 
@@ -26,7 +25,7 @@ export class KBucket {
    * @private
    * @readonly
    */
-  private readonly bucketSize: number = K_BUCKET_SIZE;
+  constructor(private readonly bucketSize: number) {}
 
   /**
    * Adds a new contact to the k-bucket, or updates its position if it already exists.

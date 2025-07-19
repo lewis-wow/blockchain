@@ -20,7 +20,7 @@ export class RoutingTable extends TypedEventEmitter<RoutingTableEventMap> {
     this.nodeId = nodeId;
 
     for (let i = 0; i < ID_BITS; i++) {
-      this.buckets.push(new KBucket());
+      this.buckets.push(new KBucket(K_BUCKET_SIZE));
     }
   }
 

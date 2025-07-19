@@ -8,7 +8,7 @@ describe('KBucket', () => {
 
   beforeEach(() => {
     nodeId = 'nodeId0';
-    kBucket = new KBucket();
+    kBucket = new KBucket(K_BUCKET_SIZE);
     contact = new Contact({
       nodeId,
       address: 'address',
