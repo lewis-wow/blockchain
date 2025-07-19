@@ -37,6 +37,8 @@ export class KademliaServer extends NetworkListenableNode {
         `[${this.selfContact.port}] New contact added: ${contact.port} (${contact.nodeId.toString('hex').substring(0, 6)})`,
       );
     });
+
+    log.info('Bootstrap server network id:', this.getNetworkIdentifier());
   }
 
   private setupRpcHandlers(): void {

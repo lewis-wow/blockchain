@@ -9,8 +9,8 @@ import { Utils } from '../Utils.js';
 import { ApiServer } from './ApiServer.js';
 import { P2pServer } from './P2pServer.js';
 
-const SERVICE_NAME = 'app';
-const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
+// const SERVICE_NAME = 'app';
+// const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type AppOptions = {
   basePort?: number;
@@ -90,10 +90,6 @@ export class App {
     this.kademliaServer.listen();
     this.p2pServer.listen();
     this.apiServer.listen();
-
-    log.info(
-      `Bootstrap server network id: ${this.kademliaServer.getNetworkIdentifier()}`,
-    );
   }
 
   static readonly DEFAULT_BASE_PORT = 3000;

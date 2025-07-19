@@ -43,7 +43,7 @@ export class P2pServer extends NetworkListenableNode {
     this.setupRpcHandlers();
     this.rpc.listen();
 
-    log.info(`P2P server listening on ${this.getNetworkIdentifier()}`);
+    log.info('Peer-to-peer server network id:', this.getNetworkIdentifier());
   }
 
   /**

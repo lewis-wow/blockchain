@@ -108,6 +108,8 @@ export class ApiServer extends NetworkAddresableNode {
 
   override listen(): void {
     this.httpServer.listen();
-    log.info(`API server listening on ${this.getAddress()}`);
+
+    log.info('API server network id:', this.getNetworkIdentifier());
+    log.info('API server listening on:', this.getAddress());
   }
 }
