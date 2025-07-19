@@ -9,15 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: volta-cli/action@v4
-      - name: Install pnpm
-        run: npm install -g pnpm # Install pnpm globally
+      - name: Install pnpm with Volta
+        run: volta install pnpm # Instruct Volta to install pnpm
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile # Use pnpm for clean install with frozen lockfile
+        run: pnpm install --frozen-lockfile
       - name: Run lint
-        run: pnpm run lint --if-present # Use pnpm to run lint script
+        run: pnpm run lint --if-present
       - name: Run prettier check
-        run: pnpm run prettier:check --if-present # Use pnpm to run prettier check script
+        run: pnpm run prettier:check --if-present
       - name: Run tests
-        run: pnpm test # Use pnpm to run tests
+        run: pnpm test
       - name: Run build
-        run: pnpm run build --if-present # Use pnpm to run build script
+        run: pnpm run build --if-present
