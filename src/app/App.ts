@@ -14,13 +14,14 @@ import { P2pServer } from './P2pServer.js';
 
 export type AppOptions = {
   basePort?: number;
-  bootstrap?: string;
+  bootstrapNetworkIdentifier?: string;
 };
 
 export class App {
   private readonly nodeId: string;
   private readonly basePort: number;
   private readonly address: string;
+  private readonly bootstrapNetworkIdentifier?: string;
 
   private blockChain = new BlockChain();
   private wallet = new Wallet();
@@ -35,6 +36,7 @@ export class App {
     this.basePort = opts.basePort ?? App.DEFAULT_BASE_PORT;
     this.nodeId = Utils.createNodeId();
     this.address = HOSTNAME;
+    this.bootstrapNetworkIdentifier = opts.bootstrapNetworkIdentifier;
 
     this.initializeKademliaServer();
     this.initializeP2pServer();
@@ -90,6 +92,18 @@ export class App {
     this.kademliaServer.listen();
     this.p2pServer.listen();
     this.apiServer.listen();
+
+    this.bootstrap();
+  }
+
+  private bootstrap(): void {
+    const bootstrapContact = this.bootstrapNetworkIdentifier
+      ? Utils.parseNetworkIdentifier(this.bootstrapNetworkIdentifier)
+      : null;
+
+    if (bootstrapContact) {
+      this.kademliaServer.bootstrap(bootstrapContact);
+    }
   }
 
   static readonly DEFAULT_BASE_PORT = 3000;

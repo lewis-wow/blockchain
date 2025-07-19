@@ -156,12 +156,12 @@ export class KademliaServer extends NetworkListenableNode {
    */
   public async bootstrap(bootstrapContact: Contact): Promise<void> {
     log.info(
-      `[${this.selfContact.port}] Bootstrapping to ${bootstrapContact.port}...`,
+      `Bootstrapping ${this.selfContact.getNetworkIdentifier()} on ${bootstrapContact.getNetworkIdentifier()}`,
     );
 
     this.routingTable.addContact(bootstrapContact);
     // Discover other nodes by performing a lookup for our own ID
     await this.findNode(this.selfContact.nodeId);
-    log.info(`[${this.selfContact.port}] Bootstrap complete.`);
+    log.info('Bootstrap complete.');
   }
 }

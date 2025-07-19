@@ -4,7 +4,7 @@ import { App } from './App.js';
 
 yargs(hideBin(process.argv))
   .command(
-    '$0 [port] [bootstrap]',
+    '$0 [port] [bootstrapNetworkIdentifier]',
     'start the server',
     (yargs) => {
       return yargs
@@ -12,7 +12,7 @@ yargs(hideBin(process.argv))
           describe: 'port to bind on http server',
           type: 'number',
         })
-        .positional('bootstrap', {
+        .positional('bootstrapNetworkIdentifier', {
           describe: 'bootstrap server addresss in format nodeId@hostname:port',
           type: 'string',
         });
@@ -20,7 +20,7 @@ yargs(hideBin(process.argv))
     (argv) => {
       const app = new App({
         basePort: argv.port,
-        bootstrap: argv.bootstrap,
+        bootstrapNetworkIdentifier: argv.bootstrapNetworkIdentifier,
       });
       app.listen();
     },
