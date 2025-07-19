@@ -1,5 +1,3 @@
-// src/Node.ts
-
 import { RoutingTable } from './RoutingTable.js';
 import { RpcServer } from '../rpc/RpcServer.js';
 import { ALPHA } from '../consts.js';
