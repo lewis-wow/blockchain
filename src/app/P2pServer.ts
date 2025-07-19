@@ -4,7 +4,7 @@ import { Transaction } from '../cryptocurrency/Transaction.js';
 import { Utils } from '../Utils.js';
 import { RpcServer } from '../rpc/RpcServer.js';
 import { KademliaServer } from '../kademlia/KademliaServer.js';
-import { JSONArray, JSONObject } from '../types.js';
+import { JSONObject } from '../types.js';
 import { Contact } from '../Contact.js';
 import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
 import { RpcParams } from '../rpc/RpcParams.js';
@@ -18,10 +18,16 @@ export type P2pServerOptions = {
   kademliaServer: KademliaServer;
 };
 
+export type P2pServerRpcProcedureMap = {
+  SYNC_CHAIN: () => { chain: JSONObject[] };
+  BROADCAST_TRANSACTION: (args: { transaction: JSONObject }) => void;
+  BROADCAST_CLEAR_TRANSACTIONS: () => void;
+};
+
 export class P2pServer extends NetworkListenableNode {
   private blockChain: BlockChain;
   private transactionPool: TransactionPool;
-  private rpc: RpcServer;
+  private rpc: RpcServer<P2pServerRpcProcedureMap>;
   private kademliaServer: KademliaServer;
 
   constructor(selfContact: Contact, opts: P2pServerOptions) {
@@ -77,7 +83,7 @@ export class P2pServer extends NetworkListenableNode {
     const peers = this.kademliaServer.routingTable.getAllContacts();
 
     (
-      await this.rpc.broadcast<{ chain: JSONArray }>({
+      await this.rpc.broadcast({
         method: 'SYNC_CHAIN',
         contacts: peers,
       })

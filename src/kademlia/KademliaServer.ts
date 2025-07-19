@@ -5,17 +5,21 @@ import { Utils } from '../Utils.js';
 import { Contact } from '../Contact.js';
 import { JSONObject } from '../types.js';
 import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
-import { RpcParams } from '../rpc/RpcParams.js';
 
 const SERVICE_NAME = 'kademlia-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
+
+export type KademliaServerRpcProcedureMap = {
+  PING: () => { pong: true };
+  FIND_NODE_REQUEST: (args: { targetId: string }) => { contacts: JSONObject[] };
+};
 
 /**
  * Represents a Kademlia node in the network.
  */
 export class KademliaServer extends NetworkListenableNode {
   public readonly routingTable: RoutingTable;
-  private readonly rpc: RpcServer;
+  private readonly rpc: RpcServer<KademliaServerRpcProcedureMap>;
 
   constructor(selfContact: Contact) {
     super(selfContact);
@@ -52,7 +56,7 @@ export class KademliaServer extends NetworkListenableNode {
 
     this.rpc.addMethod({
       method: 'FIND_NODE_REQUEST',
-      handler: (params: RpcParams<{ targetId: string }>) => {
+      handler: (params) => {
         const closest = this.routingTable.findClosest(params.data.targetId);
 
         return {
@@ -67,7 +71,7 @@ export class KademliaServer extends NetworkListenableNode {
    */
   public async ping(contact: Contact): Promise<boolean> {
     try {
-      const response = await this.rpc.request<{ pong: true }>({
+      const response = await this.rpc.request({
         contact,
         method: 'PING',
       });
@@ -100,7 +104,7 @@ export class KademliaServer extends NetworkListenableNode {
       nodesToQuery.forEach((n) => queriedNodes.add(n.nodeId));
 
       const promises = nodesToQuery.map((contact) =>
-        this.rpc.request<{ contacts: JSONObject[] }>({
+        this.rpc.request({
           contact,
           method: 'FIND_NODE_REQUEST',
           data: {

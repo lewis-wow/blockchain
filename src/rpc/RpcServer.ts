@@ -3,7 +3,7 @@ import { Contact } from '../Contact.js';
 import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
 import { JSONRPCClient, JSONRPCServer } from 'json-rpc-2.0';
 import { RpcParams } from './RpcParams.js';
-import { JSONData, MaybePromise } from '../types.js';
+import { MaybePromise } from '../types.js';
 
 /**
  * Defines the parameters expected by the JSON-RPC client's transport layer.
@@ -18,11 +18,24 @@ export type RpcServerEventMap = {
   listening: () => void;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RpcServerProcedureMap = Record<string, (args: any) => any>;
+
+type ConditionalData<
+  T extends RpcServerProcedureMap,
+  K extends keyof T,
+> = Parameters<T[K]>[0] extends undefined
+  ? { data?: Parameters<T[K]>[0] } // If it can be undefined, make 'data' optional
+  : { data: Parameters<T[K]>[0] }; // Otherwise, 'data' is required
+
 /**
  * RpcServer handles sending and receiving RPC messages over UDP.
  * It extends `NetworkListenableNode` to enable network listening capabilities.
  */
-export class RpcServer extends NetworkListenableNode<RpcServerEventMap> {
+export class RpcServer<
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  T extends RpcServerProcedureMap = {},
+> extends NetworkListenableNode<RpcServerEventMap> {
   /**
    * The UDP socket used for communication.
    * @private
@@ -101,12 +114,14 @@ export class RpcServer extends NetworkListenableNode<RpcServerEventMap> {
     this.socket.bind(this.selfContact.port, this.selfContact.address); // Bind to the specified port and host
   }
 
-  public addMethod(args: {
-    method: string;
-    handler: (params: RpcParams) => MaybePromise<JSONData> | void;
+  public addMethod<K extends keyof T>(args: {
+    method: K;
+    handler: (
+      params: RpcParams<Parameters<T[K]>[0]>,
+    ) => MaybePromise<ReturnType<T[K]>>;
   }): void {
-    this.jsonRpcServer.addMethod(args.method, (params) => {
-      return args.handler(RpcParams.fromJSON(params));
+    this.jsonRpcServer.addMethod(args.method as string, async (params) => {
+      return await args.handler(RpcParams.fromJSON(params));
     });
   }
 
@@ -118,17 +133,18 @@ export class RpcServer extends NetworkListenableNode<RpcServerEventMap> {
    * @param args.data - Optional JSON data to include in the RPC request parameters.
    * @returns {Promise<RpcParams>} A promise that resolves with the `RpcParams` received in the response.
    */
-  public async request<TResponse extends JSONData = JSONData>(args: {
-    method: string;
-    contact: Contact;
-    data?: JSONData;
-  }): Promise<RpcParams<TResponse>> {
+  public async request<K extends keyof T>(
+    args: {
+      method: K;
+      contact: Contact;
+    } & ConditionalData<T, K>,
+  ): Promise<RpcParams<ReturnType<T[K]>>> {
     // Send an RPC request using the JSON-RPC client.
     const payload = await this.jsonRpcClient.request(
-      args.method, // The RPC method name
+      args.method as string,
       new RpcParams({
         contact: this.selfContact, // Include this node's contact info
-        data: args.data, // Include any additional data
+        data: args.data as Parameters<T[K]>[0], // Include any additional data
       }).toJSON(), // Convert RpcParams to JSON for the request payload
       {
         rinfo: args.contact, // Provide remote info for the client's transport layer
@@ -139,15 +155,17 @@ export class RpcServer extends NetworkListenableNode<RpcServerEventMap> {
     return RpcParams.fromJSON(payload);
   }
 
-  async broadcast<TResponse extends JSONData = JSONData>(args: {
-    method: string;
-    contacts: Contact[];
-    data?: JSONData;
-  }): Promise<RpcParams<TResponse>[]> {
+  async broadcast<K extends keyof T>(
+    args: {
+      method: K;
+      contacts: Contact[];
+    } & ConditionalData<T, K>,
+  ): Promise<RpcParams<ReturnType<T[K]>>[]> {
     return await Promise.all(
       args.contacts.map((contact) =>
-        this.request<TResponse>({
-          ...args,
+        this.request<K>({
+          method: args.method,
+          data: args.data,
           contact,
         }),
       ),
