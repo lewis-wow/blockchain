@@ -5,7 +5,7 @@ import {
   format,
   transports,
 } from 'winston';
-import { HOSTNAME, ID_BYTES, LOG_LEVEL } from './consts.js';
+import { ID_BYTES, LOG_LEVEL } from './consts.js';
 import util from 'util';
 import { Contact } from './Contact.js';
 
@@ -56,49 +56,20 @@ export class Utils {
     return createHash('sha256').update(value).digest('hex');
   }
 
-  /**
-   * Creates contact information for different servers (API, P2P, Kademlia) of a single node.
-   * A common Node ID is generated for all contacts.
-   * @param args - An object containing the port numbers for the API, P2P, and Kademlia servers.
-   * @param args.apiServerPort - The port number for the API server.
-   * @param args.p2pServerPort - The port number for the P2P server.
-   * @param args.kademliaServerPort - The port number for the Kademlia server.
-   * @returns An object containing the generated Node ID and Contact instances for each server.
-   */
-  static createNodeSelfContacts(args: {
-    apiServerPort: number;
-    p2pServerPort: number;
-    kademliaServerPort: number;
-  }): {
-    nodeId: string;
-    apiServerSelfContact: Contact;
-    p2pServerSelfContact: Contact;
-    kademliaServerSelfContact: Contact;
-  } {
-    // Generate a unique Node ID for the current node
-    const nodeId = Utils.createNodeId();
+  static parseNetworkIdentifier(networkIdentifier: string): Contact | null {
+    const bootstrapRegexMatch = networkIdentifier.match(
+      Utils.BOOTSTRAP_SERVER_REGEX,
+    );
 
-    return {
-      nodeId,
-      // Create Contact for the API server
-      apiServerSelfContact: new Contact({
-        address: HOSTNAME, // Use the predefined hostname
-        port: args.apiServerPort,
-        nodeId,
-      }),
-      // Create Contact for the P2P server
-      p2pServerSelfContact: new Contact({
-        address: HOSTNAME, // Use the predefined hostname
-        port: args.p2pServerPort,
-        nodeId,
-      }),
-      // Create Contact for the Kademlia server
-      kademliaServerSelfContact: new Contact({
-        address: HOSTNAME, // Use the predefined hostname
-        port: args.kademliaServerPort,
-        nodeId,
-      }),
-    };
+    if (!bootstrapRegexMatch) {
+      return null;
+    }
+
+    return Contact.fromJSON({
+      nodeId: bootstrapRegexMatch[1],
+      address: bootstrapRegexMatch[2],
+      port: Number.parseInt(bootstrapRegexMatch[3]),
+    });
   }
 
   /**
@@ -114,4 +85,6 @@ export class Utils {
     format: combine(colorize(), logFormat), // Apply coloring and the custom log format
     transports: [new transports.Console()], // Log to the console
   });
+
+  static readonly BOOTSTRAP_SERVER_REGEX = /^(.+)@(.+):(\d+)$/;
 }
