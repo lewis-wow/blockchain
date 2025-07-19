@@ -82,15 +82,15 @@ export class P2pServer extends NetworkListenableNode {
   public async syncChains(): Promise<void> {
     const peers = this.kademliaServer.routingTable.getAllContacts();
 
-    (
-      await this.rpc.broadcast({
-        method: 'SYNC_CHAIN',
-        contacts: peers,
-      })
-    ).forEach((syncChainParams) => {
-      const remoteChain = BlockChain.fromJSON(syncChainParams.data.chain);
-      this.blockChain.replaceChain(remoteChain.getChain());
+    const responses = await this.rpc.broadcastRequest({
+      method: 'SYNC_CHAIN',
+      contacts: peers,
     });
+
+    for (const response of responses) {
+      const remoteChain = BlockChain.fromJSON(response.data.chain);
+      this.blockChain.replaceChain(remoteChain.getChain());
+    }
   }
 
   /**
@@ -99,7 +99,7 @@ export class P2pServer extends NetworkListenableNode {
   public async broadcastTransaction(transaction: Transaction): Promise<void> {
     const peers = this.kademliaServer.routingTable.getAllContacts();
 
-    await this.rpc.broadcast({
+    this.rpc.broadcastNotify({
       method: 'BROADCAST_TRANSACTION',
       contacts: peers,
       data: {
@@ -114,7 +114,7 @@ export class P2pServer extends NetworkListenableNode {
   public async broadcastClearTransactions(): Promise<void> {
     const peers = this.kademliaServer.routingTable.getAllContacts();
 
-    await this.rpc.broadcast({
+    this.rpc.broadcastNotify({
       method: 'BROADCAST_CLEAR_TRANSACTIONS',
       contacts: peers,
     });

@@ -11,7 +11,7 @@ const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
 
 export type KademliaServerRpcProcedureMap = {
   PING: () => { pong: true };
-  FIND_NODE_REQUEST: (args: { targetId: string }) => { contacts: JSONObject[] };
+  FIND_NODE: (args: { targetId: string }) => { contacts: JSONObject[] };
 };
 
 /**
@@ -55,9 +55,12 @@ export class KademliaServer extends NetworkListenableNode {
     });
 
     this.rpc.addMethod({
-      method: 'FIND_NODE_REQUEST',
+      method: 'FIND_NODE',
       handler: (params) => {
+        console.log('handle');
         const closest = this.routingTable.findClosest(params.data.targetId);
+
+        console.log(closest);
 
         return {
           contacts: closest.map((contact) => contact.toJSON()),
@@ -103,50 +106,45 @@ export class KademliaServer extends NetworkListenableNode {
       // Mark as queried
       nodesToQuery.forEach((n) => queriedNodes.add(n.nodeId));
 
-      const promises = nodesToQuery.map((contact) =>
-        this.rpc.request({
-          contact,
-          method: 'FIND_NODE_REQUEST',
-          data: {
-            targetId,
-          },
-        }),
-      );
+      const responses = await this.rpc.broadcastRequest({
+        method: 'FIND_NODE',
+        contacts: nodesToQuery,
+        data: {
+          targetId,
+        },
+      });
 
-      const results = await Promise.allSettled(promises);
+      console.log(responses);
+
       let foundNewNodes = false;
 
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          const response = result.value;
-          const newContacts = response.data.contacts.map((contact) =>
-            Contact.fromJSON(contact),
+      for (const response of responses) {
+        const newContacts = response.data.contacts.map((contact) =>
+          Contact.fromJSON(contact),
+        );
+
+        for (const newContact of newContacts) {
+          this.routingTable.addContact(newContact);
+          const isNew = !closestNodes.some(
+            (n) => n.nodeId === newContact.nodeId,
           );
 
-          newContacts.forEach((contact) => {
-            this.routingTable.addContact(contact);
-            const isNew = !closestNodes.some(
-              (n) => n.nodeId === contact.nodeId,
-            );
-
-            if (isNew) {
-              closestNodes.push(contact);
-              foundNewNodes = true;
-            }
-          });
+          if (isNew) {
+            closestNodes.push(newContact);
+            foundNewNodes = true;
+          }
         }
-      });
+      }
 
       // Sort by distance and keep the best
-      closestNodes.sort((a, b) => {
-        return a.nodeId.localeCompare(b.nodeId);
-      });
+      closestNodes.sort((a, b) => a.nodeId.localeCompare(b.nodeId));
 
       if (foundNewNodes) {
         await find(); // Recurse
       }
     };
 
+    console.log('find start');
     await find();
     return this.routingTable.findClosest(targetId);
   }

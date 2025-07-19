@@ -55,6 +55,7 @@ export class RpcServer<
    */
   private readonly jsonRpcClient = new JSONRPCClient<JSONRPCClientParams>(
     (payload, { rinfo }) => {
+      console.log('socket send', payload, rinfo);
       // Sends the JSON-RPC payload as a UDP message to the target rinfo.
       this.socket.send(JSON.stringify(payload), rinfo.port, rinfo.address);
     },
@@ -69,14 +70,16 @@ export class RpcServer<
     this.socket = createSocket('udp4'); // Create a UDP4 socket
 
     // Apply middleware to the JSON-RPC server to process incoming requests.
-    this.jsonRpcServer.applyMiddleware((next, request) => {
+    this.jsonRpcServer.applyMiddleware(async (next, request, serverParams) => {
       // Parse the RPC parameters from the request.
       const parsedRpcParams = RpcParams.fromJSON(request.params);
       // Emit a 'seen' event with the contact information from the parsed parameters.
       this.emit('seen', parsedRpcParams.contact);
 
+      console.log(request);
+
       // Continue to the next middleware or the actual RPC method handler.
-      return next(request);
+      return await next(request, serverParams);
     });
 
     // Set up the event listeners for the UDP socket.
@@ -93,6 +96,8 @@ export class RpcServer<
     this.socket.on('message', async (msg, rinfo) => {
       // Process the incoming message using the JSON-RPC server.
       const response = await this.jsonRpcServer.receiveJSON(msg.toString());
+
+      console.log({ response });
 
       if (response) {
         this.socket.send(JSON.stringify(response), rinfo.port, rinfo.address);
@@ -121,7 +126,10 @@ export class RpcServer<
     ) => MaybePromise<ReturnType<T[K]>>;
   }): void {
     this.jsonRpcServer.addMethod(args.method as string, async (params) => {
-      return await args.handler(RpcParams.fromJSON(params));
+      console.log('handle init');
+      const response = await args.handler(RpcParams.fromJSON(params));
+      console.log('resp', response);
+      return response;
     });
   }
 
@@ -139,23 +147,50 @@ export class RpcServer<
       contact: Contact;
     } & ConditionalData<T, K>,
   ): Promise<RpcParams<ReturnType<T[K]>>> {
+    console.log('init');
+
+    const params = new RpcParams({
+      contact: this.selfContact, // Include this node's contact info
+      data: args.data as Parameters<T[K]>[0], // Include any additional data
+    });
+
     // Send an RPC request using the JSON-RPC client.
     const payload = await this.jsonRpcClient.request(
       args.method as string,
-      new RpcParams({
-        contact: this.selfContact, // Include this node's contact info
-        data: args.data as Parameters<T[K]>[0], // Include any additional data
-      }).toJSON(), // Convert RpcParams to JSON for the request payload
+      params.toJSON(), // Convert RpcParams to JSON for the request payload
       {
         rinfo: args.contact, // Provide remote info for the client's transport layer
       },
     );
 
+    console.log(payload);
+
     // Convert the received payload back into RpcParams and return.
     return RpcParams.fromJSON(payload);
   }
 
-  async broadcast<K extends keyof T>(
+  public notify<K extends keyof T>(
+    args: {
+      method: K;
+      contact: Contact;
+    } & ConditionalData<T, K>,
+  ): void {
+    const params = new RpcParams({
+      contact: this.selfContact, // Include this node's contact info
+      data: args.data as Parameters<T[K]>[0], // Include any additional data
+    });
+
+    // Send an RPC request using the JSON-RPC client.
+    this.jsonRpcClient.notify(
+      args.method as string,
+      params.toJSON(), // Convert RpcParams to JSON for the request payload
+      {
+        rinfo: args.contact, // Provide remote info for the client's transport layer
+      },
+    );
+  }
+
+  async broadcastRequest<K extends keyof T>(
     args: {
       method: K;
       contacts: Contact[];
@@ -169,6 +204,21 @@ export class RpcServer<
           contact,
         }),
       ),
+    );
+  }
+
+  broadcastNotify<K extends keyof T>(
+    args: {
+      method: K;
+      contacts: Contact[];
+    } & ConditionalData<T, K>,
+  ): void {
+    args.contacts.forEach((contact) =>
+      this.notify<K>({
+        method: args.method,
+        data: args.data,
+        contact,
+      }),
     );
   }
 }
