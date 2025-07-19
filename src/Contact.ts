@@ -43,6 +43,10 @@ export class Contact extends Serializable {
     this.port = opts.port;
   }
 
+  getNetworkIdentifier(): string {
+    return `${this.nodeId}@${this.address}:${this.port}`;
+  }
+
   /**
    * Converts the Contact instance into a JSON object.
    * @returns A JSON object representation of the contact.

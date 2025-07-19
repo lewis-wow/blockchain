@@ -33,6 +33,6 @@ export abstract class NetworkNode<
    * @returns A string representing the network identifier.
    */
   getNetworkIdentifier(): string {
-    return `${this.selfContact.nodeId}@${this.selfContact.address}:${this.selfContact.port}`;
+    return this.selfContact.getNetworkIdentifier();
   }
 }

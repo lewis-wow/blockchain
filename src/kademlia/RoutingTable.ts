@@ -1,13 +1,17 @@
-import EventEmitter from 'node:events';
 import { KBucket } from './KBucket.js';
 import { ID_BITS, K_BUCKET_SIZE } from '../consts.js';
 import { Utils } from './Utils.js';
 import { Contact } from '../Contact.js';
+import { TypedEventEmitter } from '../event_emitter/TypedEventEmitter.js';
+
+export type RoutingTableEventMap = {
+  contactAdded: (contact: Contact) => void;
+};
 
 /**
  * Manages all the k-buckets for a node.
  */
-export class RoutingTable extends EventEmitter {
+export class RoutingTable extends TypedEventEmitter<RoutingTableEventMap> {
   public readonly nodeId: string;
   private readonly buckets: KBucket[] = [];
 

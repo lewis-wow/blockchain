@@ -33,9 +33,7 @@ export class KademliaServer extends NetworkListenableNode {
     this.rpc.listen();
 
     this.routingTable.on('contactAdded', (contact) => {
-      log.info(
-        `New contact added: ${contact.port} (${contact.nodeId.toString('hex').substring(0, 6)})`,
-      );
+      log.info('New contact added:', contact.getNetworkIdentifier());
     });
 
     log.info('Bootstrap server network id:', this.getNetworkIdentifier());
