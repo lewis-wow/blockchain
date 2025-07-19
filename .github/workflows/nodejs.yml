@@ -9,8 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: volta-cli/action@v4
-      - run: npm ci --no-audit
-      - run: npm run lint --if-present
-      - run: npm run prettier:check --if-present
-      - run: npm test
-      - run: npm run build --if-present
+      - name: Install pnpm
+        run: npm install -g pnpm # Install pnpm globally
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile # Use pnpm for clean install with frozen lockfile
+      - name: Run lint
+        run: pnpm run lint --if-present # Use pnpm to run lint script
+      - name: Run prettier check
+        run: pnpm run prettier:check --if-present # Use pnpm to run prettier check script
+      - name: Run tests
+        run: pnpm test # Use pnpm to run tests
+      - name: Run build
+        run: pnpm run build --if-present # Use pnpm to run build script
