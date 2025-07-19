@@ -1,4 +1,4 @@
-export type JSONPrimitive = string | number | null | undefined | Date;
+export type JSONPrimitive = string | number | null | undefined | Date | boolean;
 
 export type JSONData = JSONPrimitive | JSONArray | JSONObject;
 
