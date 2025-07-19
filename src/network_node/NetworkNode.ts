@@ -1,11 +1,17 @@
 import { EventEmitter } from 'node:events';
 import { Contact } from '../Contact.js';
+import { EventMap, TypedEventEmitter } from '../TypedEventEmitter.js';
 
 /**
  * Abstract base class for a network node.
  * Defines common properties and methods that all network nodes should have.
  */
-export abstract class NetworkNode extends EventEmitter {
+export abstract class NetworkNode<
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  T extends EventMap = {},
+> extends (EventEmitter as {
+  new <T extends EventMap>(): TypedEventEmitter<T>;
+})<T> {
   /**
    * @param selfContact - The contact information for this network node.
    */

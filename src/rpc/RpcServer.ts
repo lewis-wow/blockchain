@@ -13,11 +13,16 @@ export type JSONRPCClientParams = {
   rinfo: Pick<RemoteInfo, 'port' | 'address'>;
 };
 
+export type RpcServerEventMap = {
+  seen: (contact: Contact) => void;
+  listening: () => void;
+};
+
 /**
  * RpcServer handles sending and receiving RPC messages over UDP.
  * It extends `NetworkListenableNode` to enable network listening capabilities.
  */
-export class RpcServer extends NetworkListenableNode {
+export class RpcServer extends NetworkListenableNode<RpcServerEventMap> {
   /**
    * The UDP socket used for communication.
    * @private

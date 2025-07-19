@@ -110,7 +110,6 @@ export class KademliaServer extends NetworkListenableNode {
       );
 
       const results = await Promise.allSettled(promises);
-      console.log(results);
       let foundNewNodes = false;
 
       results.forEach((result) => {
