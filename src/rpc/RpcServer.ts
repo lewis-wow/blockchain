@@ -1,153 +1,151 @@
-// src/RPC.ts
-
-import { createSocket, Socket } from 'dgram';
-import { randomBytes } from 'crypto';
+import { createSocket, RemoteInfo, Socket } from 'dgram';
 import { Contact } from '../Contact.js';
-import { RpcMessage } from '../RpcMessage.js';
 import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
+import { JSONRPCClient, JSONRPCServer } from 'json-rpc-2.0';
+import { RpcParams } from './RpcParams.js';
+import { JSONData, MaybePromise } from '../types.js';
 
 /**
- * Handles sending and receiving RPC messages over UDP.
+ * Defines the parameters expected by the JSON-RPC client's transport layer.
+ * @property rinfo - Remote information including port and address for sending messages.
+ */
+export type JSONRPCClientParams = {
+  rinfo: Pick<RemoteInfo, 'port' | 'address'>;
+};
+
+/**
+ * RpcServer handles sending and receiving RPC messages over UDP.
+ * It extends `NetworkListenableNode` to enable network listening capabilities.
  */
 export class RpcServer extends NetworkListenableNode {
+  /**
+   * The UDP socket used for communication.
+   * @private
+   */
   private readonly socket: Socket;
-  private readonly pendingRequests: Map<
-    string,
-    (response: RpcMessage) => void
-  > = new Map();
 
+  /**
+   * The JSON-RPC server instance for handling incoming RPC requests.
+   * @private
+   */
+  private readonly jsonRpcServer = new JSONRPCServer();
+
+  /**
+   * The JSON-RPC client instance for making outgoing RPC requests.
+   * It uses the UDP socket to send messages to the specified remote info.
+   * @private
+   */
+  private readonly jsonRpcClient = new JSONRPCClient<JSONRPCClientParams>(
+    (payload, { rinfo }) => {
+      // Sends the JSON-RPC payload as a UDP message to the target rinfo.
+      this.socket.send(JSON.stringify(payload), rinfo.port, rinfo.address);
+    },
+  );
+
+  /**
+   * Constructs an instance of RpcServer.
+   * @param selfContact - The contact information for this network node.
+   */
   constructor(selfContact: Contact) {
-    super(selfContact); // Call the parent constructor
-    this.socket = createSocket('udp4');
+    super(selfContact); // Call the parent constructor to initialize selfContact
+    this.socket = createSocket('udp4'); // Create a UDP4 socket
+
+    // Apply middleware to the JSON-RPC server to process incoming requests.
+    this.jsonRpcServer.applyMiddleware((next, request) => {
+      // Parse the RPC parameters from the request.
+      const parsedRpcParams = RpcParams.fromJSON(request.params);
+      // Emit a 'seen' event with the contact information from the parsed parameters.
+      this.emit('seen', parsedRpcParams.contact);
+
+      // Continue to the next middleware or the actual RPC method handler.
+      return next(request);
+    });
+
+    // Set up the event listeners for the UDP socket.
     this.setupListeners();
   }
 
+  /**
+   * Sets up event listeners for the UDP socket.
+   * Listens for 'message' (incoming UDP packets) and 'listening' events.
+   * @private
+   */
   private setupListeners(): void {
-    this.socket.on('message', (msg) => {
-      try {
-        const message = RpcMessage.fromJSON(JSON.parse(msg.toString()));
+    // Handler for incoming UDP messages.
+    this.socket.on('message', async (msg, rinfo) => {
+      // Process the incoming message using the JSON-RPC server.
+      const response = await this.jsonRpcServer.receiveJSON(msg.toString());
 
-        // When we hear from a node, we update our routing table.
-        // The sender's contact info is in the message itself.
-        this.emit('seen', message.sender);
-
-        if (message.type.endsWith('_RESPONSE')) {
-          const callback = this.pendingRequests.get(message.rpcId);
-          if (callback) {
-            callback(message);
-            this.pendingRequests.delete(message.rpcId);
-          }
-        } else {
-          // This is a request, so we emit it for the Node to handle.
-          this.emit(message.type, message);
-        }
-      } catch (error) {
-        console.error('Failed to parse RPC message:', error);
+      if (response) {
+        this.socket.send(JSON.stringify(response), rinfo.port, rinfo.address);
       }
     });
 
+    // Handler for the 'listening' event, emitted when the socket starts listening.
     this.socket.on('listening', () => {
       this.emit('listening');
     });
   }
 
   /**
-   * Implements the abstract listen method from the Server class.
-   * Binds the UDP socket to the host and port from the selfContact.
+   * Implements the abstract `listen` method from `NetworkListenableNode`.
+   * Binds the UDP socket to the host and port specified in the `selfContact`.
+   * @override
    */
   public override listen(): void {
-    this.socket.bind(this.selfContact.port, this.selfContact.host);
+    this.socket.bind(this.selfContact.port, this.selfContact.address); // Bind to the specified port and host
   }
 
-  /**
-   * Sends an RPC request and returns a promise that resolves with the response.
-   * @param target The contact to send the request to.
-   * @param type The type of the RPC request.
-   * @param payload The data to send with the request.
-   * @returns A promise that resolves with the response message.
-   */
-  public request(args: {
-    target: Contact;
-    type: string;
-    payload?: unknown;
-    timeout?: number;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }): Promise<RpcMessage<any>> {
-    const { target, type, payload, timeout } = args;
-
-    return new Promise((resolve, reject) => {
-      const rpcId = randomBytes(16).toString('hex');
-      const message = new RpcMessage({
-        type,
-        rpcId,
-        sender: this.selfContact,
-        payload,
-      });
-
-      this.pendingRequests.set(rpcId, resolve);
-
-      const buffer = Buffer.from(JSON.stringify(message.toJSON()));
-      this.socket.send(buffer, target.port, target.host, (err) => {
-        if (err) {
-          this.pendingRequests.delete(rpcId);
-          reject(err);
-        }
-      });
-
-      if (timeout !== undefined) {
-        // Set a timeout for the request
-        setTimeout(() => {
-          if (this.pendingRequests.has(rpcId)) {
-            this.pendingRequests.delete(rpcId);
-            reject(
-              new Error(
-                `RPC request ${rpcId} to ${target.host}:${target.port} timed out`,
-              ),
-            );
-          }
-        }, timeout);
-      }
-    });
-  }
-
-  /**
-   * Sends a response to a request.
-   * @param target The contact to send the response to.
-   * @param message The original request message.
-   * @param type The type of the response.
-   * @param payload The data for the response.
-   */
-  public respond(args: {
-    target: Contact;
-    message: RpcMessage;
-    type: string;
-    payload: unknown;
+  public addMethod(args: {
+    method: string;
+    handler: (params: RpcParams) => MaybePromise<JSONData> | void;
   }): void {
-    const { target, message, type, payload } = args;
-    const response = new RpcMessage({
-      type,
-      rpcId: message.rpcId, // Echo the rpcId from the request
-      sender: this.selfContact,
-      payload,
+    this.jsonRpcServer.addMethod(args.method, (params) => {
+      return args.handler(RpcParams.fromJSON(params));
     });
-    const buffer = Buffer.from(JSON.stringify(response.toJSON()));
-    this.socket.send(buffer, target.port, target.host);
   }
 
-  createBroadcast(args: {
-    type: string;
-    message: RpcMessage;
-    payload: unknown;
-  }): (contacts: Contact[]) => Promise<RpcMessage<unknown>[]> {
-    return async (contacts: Contact[]) => {
-      return await Promise.all(
-        contacts.map((contact) =>
-          this.request({
-            target: contact,
-            ...args,
-          }),
-        ),
-      );
-    };
+  /**
+   * Sends an RPC request to a target contact.
+   * @param args - An object containing the method name, target contact, and optional data.
+   * @param args.method - The name of the RPC method to call.
+   * @param args.contact - The `Contact` object of the remote node to send the request to.
+   * @param args.data - Optional JSON data to include in the RPC request parameters.
+   * @returns {Promise<RpcParams>} A promise that resolves with the `RpcParams` received in the response.
+   */
+  public async request<TResponse extends JSONData = JSONData>(args: {
+    method: string;
+    contact: Contact;
+    data?: JSONData;
+  }): Promise<RpcParams<TResponse>> {
+    // Send an RPC request using the JSON-RPC client.
+    const payload = await this.jsonRpcClient.request(
+      args.method, // The RPC method name
+      new RpcParams({
+        contact: this.selfContact, // Include this node's contact info
+        data: args.data, // Include any additional data
+      }).toJSON(), // Convert RpcParams to JSON for the request payload
+      {
+        rinfo: args.contact, // Provide remote info for the client's transport layer
+      },
+    );
+
+    // Convert the received payload back into RpcParams and return.
+    return RpcParams.fromJSON(payload);
+  }
+
+  async broadcast<TResponse extends JSONData = JSONData>(args: {
+    method: string;
+    contacts: Contact[];
+    data?: JSONData;
+  }): Promise<RpcParams<TResponse>[]> {
+    return await Promise.all(
+      args.contacts.map((contact) =>
+        this.request<TResponse>({
+          ...args,
+          contact,
+        }),
+      ),
+    );
   }
 }

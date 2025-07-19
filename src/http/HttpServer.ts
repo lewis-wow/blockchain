@@ -14,7 +14,7 @@ export class HttpServer extends NetworkListenableNode {
     serve(
       {
         fetch: this.app.fetch,
-        hostname: this.selfContact.host,
+        hostname: this.selfContact.address,
         port: this.selfContact.port,
       },
       () => {

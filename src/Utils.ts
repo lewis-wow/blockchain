@@ -49,17 +49,17 @@ export class Utils {
     return {
       nodeId,
       apiServerSelfContact: new Contact({
-        host: HOSTNAME,
+        address: HOSTNAME,
         port: args.apiServerPort,
         nodeId,
       }),
       p2pServerSelfContact: new Contact({
-        host: HOSTNAME,
+        address: HOSTNAME,
         port: args.p2pServerPort,
         nodeId,
       }),
       kademliaServerSelfContact: new Contact({
-        host: HOSTNAME,
+        address: HOSTNAME,
         port: args.kademliaServerPort,
         nodeId,
       }),

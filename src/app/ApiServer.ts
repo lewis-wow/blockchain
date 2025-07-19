@@ -103,7 +103,7 @@ export class ApiServer extends NetworkAddresableNode {
   }
 
   override getAddress(): string {
-    return `http://${this.selfContact.host}:${this.selfContact.port}`;
+    return `http://${this.selfContact.address}:${this.selfContact.port}`;
   }
 
   override listen(): void {

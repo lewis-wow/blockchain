@@ -23,10 +23,10 @@ export abstract class NetworkNode extends EventEmitter {
 
   /**
    * Generates a unique network identifier string for this node.
-   * The identifier is formatted as "nodeId@host:port".
+   * The identifier is formatted as "nodeId@address:port".
    * @returns A string representing the network identifier.
    */
   getNetworkIdentifier(): string {
-    return `${this.selfContact.nodeId}@${this.selfContact.host}:${this.selfContact.port}`;
+    return `${this.selfContact.nodeId}@${this.selfContact.address}:${this.selfContact.port}`;
   }
 }

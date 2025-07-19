@@ -9,7 +9,7 @@ import { JSONObject } from './types.js';
  */
 export type ContactOptions = {
   nodeId: string;
-  host: string;
+  address: string;
   port: number;
 };
 
@@ -25,7 +25,7 @@ export class Contact extends Serializable {
   /**
    * The host address (e.g., IP address or hostname) of the node.
    */
-  readonly host: string;
+  readonly address: string;
   /**
    * The port number on which the node is listening.
    */
@@ -39,7 +39,7 @@ export class Contact extends Serializable {
     super();
 
     this.nodeId = opts.nodeId;
-    this.host = opts.host;
+    this.address = opts.address;
     this.port = opts.port;
   }
 
@@ -51,7 +51,7 @@ export class Contact extends Serializable {
     return {
       nodeId: this.nodeId,
       port: this.port,
-      host: this.host,
+      address: this.address,
     };
   }
 
@@ -64,7 +64,7 @@ export class Contact extends Serializable {
     return new Contact({
       nodeId: json.nodeId as string,
       port: json.port as number,
-      host: json.host as string,
+      address: json.address as string,
     });
   }
 }

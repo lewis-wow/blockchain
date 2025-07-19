@@ -5,9 +5,9 @@ import { RpcServer } from '../rpc/RpcServer.js';
 import { ALPHA } from '../consts.js';
 import { Utils } from '../Utils.js';
 import { Contact } from '../Contact.js';
-import { RpcMessage } from '../RpcMessage.js';
 import { JSONObject } from '../types.js';
 import { NetworkListenableNode } from '../network_node/NetworkListenableNode.js';
+import { RpcParams } from '../rpc/RpcParams.js';
 
 const SERVICE_NAME = 'kademlia-server';
 const log = Utils.defaultLog.child({ serviceName: SERVICE_NAME });
@@ -43,32 +43,25 @@ export class KademliaServer extends NetworkListenableNode {
       this.routingTable.addContact(contact);
     });
 
-    this.rpc.on('PING_REQUEST', (message: RpcMessage) => {
-      this.rpc.respond({
-        target: message.sender,
-        message,
-        type: 'PING_RESPONSE',
-        payload: {
+    this.rpc.addMethod({
+      method: 'PING',
+      handler: () => {
+        return {
           pong: true,
-        },
-      });
+        };
+      },
     });
 
-    this.rpc.on(
-      'FIND_NODE_REQUEST',
-      (message: RpcMessage<{ targetId: string }>) => {
-        const targetId = message.payload.targetId;
-        const closest = this.routingTable.findClosest(targetId);
-        this.rpc.respond({
-          target: message.sender,
-          message,
-          type: 'FIND_NODE_RESPONSE',
-          payload: {
-            contacts: closest,
-          },
-        });
+    this.rpc.addMethod({
+      method: 'FIND_NODE_REQUEST',
+      handler: (params: RpcParams<{ targetId: string }>) => {
+        const closest = this.routingTable.findClosest(params.data.targetId);
+
+        return {
+          contacts: closest.map((contact) => contact.toJSON()),
+        };
       },
-    );
+    });
   }
 
   /**
@@ -76,14 +69,14 @@ export class KademliaServer extends NetworkListenableNode {
    */
   public async ping(contact: Contact): Promise<boolean> {
     try {
-      const response: RpcMessage<{ pong: true }> = await this.rpc.request({
-        target: contact,
-        type: 'PING_REQUEST',
+      const response = await this.rpc.request<{ pong: true }>({
+        contact,
+        method: 'PING',
       });
 
-      return response.payload.pong === true;
+      return response.data.pong === true;
     } catch (error) {
-      log.error(`Ping failed for ${contact.host}:${contact.port}`, error);
+      log.error(`Ping failed for ${contact.address}:${contact.port}`, error);
       return false;
     }
   }
@@ -100,6 +93,7 @@ export class KademliaServer extends NetworkListenableNode {
       const nodesToQuery = closestNodes.filter(
         (n) => !queriedNodes.has(n.nodeId),
       );
+
       if (nodesToQuery.length === 0) {
         return; // No new nodes to query
       }
@@ -107,33 +101,33 @@ export class KademliaServer extends NetworkListenableNode {
       // Mark as queried
       nodesToQuery.forEach((n) => queriedNodes.add(n.nodeId));
 
-      const promises: Promise<RpcMessage<{ contacts: JSONObject[] }>>[] =
-        nodesToQuery.map((node) =>
-          this.rpc.request({
-            target: node,
-            type: 'FIND_NODE_REQUEST',
-            payload: {
-              targetId: targetId,
-            },
-          }),
-        );
+      const promises = nodesToQuery.map((contact) =>
+        this.rpc.request<{ contacts: JSONObject[] }>({
+          contact,
+          method: 'FIND_NODE_REQUEST',
+          data: {
+            targetId,
+          },
+        }),
+      );
 
       const results = await Promise.allSettled(promises);
+      console.log(results);
       let foundNewNodes = false;
 
       results.forEach((result) => {
         if (result.status === 'fulfilled') {
           const response = result.value;
-          const newContacts: Contact[] = response.payload.contacts.map(
-            (contact) => Contact.fromJSON(contact),
+          const newContacts = response.data.contacts.map((contact) =>
+            Contact.fromJSON(contact),
           );
 
           newContacts.forEach((contact) => {
-            console.log('foreach');
             this.routingTable.addContact(contact);
             const isNew = !closestNodes.some(
               (n) => n.nodeId === contact.nodeId,
             );
+
             if (isNew) {
               closestNodes.push(contact);
               foundNewNodes = true;
@@ -163,7 +157,7 @@ export class KademliaServer extends NetworkListenableNode {
     log.info(
       `[${this.selfContact.port}] Bootstrapping to ${bootstrapContact.port}...`,
     );
-    console.log('bootstrap');
+
     this.routingTable.addContact(bootstrapContact);
     // Discover other nodes by performing a lookup for our own ID
     await this.findNode(this.selfContact.nodeId);

@@ -26,6 +26,7 @@
     "@hono/node-ws": "^1.2.0",
     "@hono/zod-validator": "^0.7.0",
     "hono": "^4.8.3",
+    "json-rpc-2.0": "^1.7.1",
     "lodash-es": "^4.17.21",
     "prettyjson": "^1.2.5",
     "ts-pattern": "^5.7.1",
