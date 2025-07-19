@@ -17,7 +17,7 @@ yargs(hideBin(process.argv))
           type: 'string',
         });
     },
-    async (argv) => {
+    (argv) => {
       const app = new App({
         basePort: argv.port,
         bootstrap: argv.bootstrap,
