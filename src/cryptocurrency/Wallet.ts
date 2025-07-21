@@ -1,5 +1,5 @@
 import { renderString } from 'prettyjson';
-import { KeyPair } from './KeyPair.js';
+import { KeyPair } from '../utils/KeyPair.js';
 import { TransactionPool } from './TransactionPool.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Transaction } from './Transaction.js';

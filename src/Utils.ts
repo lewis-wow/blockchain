@@ -10,29 +10,7 @@ import util from 'util';
 import { Contact } from './Contact.js';
 
 // Destructure format functions from winston
-const { combine, printf, colorize } = format;
 
-/**
- * Custom log format function for Winston.
- * Formats log messages to include level, service name (if provided), message, and any extra arguments.
- */
-const logFormat = printf(
-  ({ level, message, serviceName, [Symbol.for('splat')]: splat }) => {
-    // Determine the service label based on whether serviceName is provided
-    const serviceLabel = serviceName ? `[${serviceName}]` : '';
-
-    // Process extra arguments (splat) for logging.
-    // If splat is an array, inspect each element for detailed logging.
-    const extras = Array.isArray(splat)
-      ? splat
-          .map((val) => util.inspect(val, { depth: null, colors: true }))
-          .join(' ')
-      : '';
-
-    // Construct the final log string
-    return `${level} ${serviceLabel} ${message}${extras ? ' ' + extras : ''}`;
-  },
-);
 
 /**
  * Utility class providing helper methods for various functionalities.
@@ -47,11 +25,7 @@ export class Utils {
     return randomBytes(ID_BYTES).toString('hex');
   }
 
-  /**
-   * Computes the SHA256 hash of a given string.
-   * @param {string} value - The input string to be hashed.
-   * @returns {string} The SHA256 hash as a hexadecimal string.
-   */
+
   static sha256(value: string): string {
     return createHash('sha256').update(value).digest('hex');
   }

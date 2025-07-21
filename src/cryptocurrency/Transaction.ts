@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { Wallet } from './Wallet.js';
-import { KeyPair } from './KeyPair.js';
+import { KeyPair } from '../utils/KeyPair.js';
 import { AmountExceedsBalance } from '../exceptions/AmountExceedsBalance.js';
 import { Serializable } from '../Serializable.js';
 import { JSONObject } from '../types.js';
